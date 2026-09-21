@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Redbridge Exam Platform Setup</title>
+<style>
+:root{--bg:#eef3f6;--card:#fff;--ink:#14202a;--mut:#61717e;--line:#d7e0e6;--brand:#a61c2e}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:linear-gradient(145deg,#0e161d,#263f50);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(520px,100%);background:var(--card);padding:28px;border-radius:22px;box-shadow:0 28px 80px #0005}.mut{color:var(--mut);line-height:1.6}.stack{display:grid;gap:14px}.field{display:grid;gap:6px}.field input{width:100%;padding:.8rem .9rem;border:1px solid var(--line);border-radius:10px;font:inherit}.btn{padding:.8rem 1rem;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:800;cursor:pointer}.msg{font-weight:700}.ok{color:#136b45}.bad{color:#a82119}a{color:var(--brand)}
+</style></head>
+<body><main class="card"><div class="mut">Redbridge International School</div><h1>First administrator setup</h1><p class="mut">Use this once to create the platform super-administrator. The setup token is deleted automatically after successful setup.</p>
+<form id="f" class="stack">
+<label class="field">Setup token<input name="setup_token" required autocomplete="off"></label>
+<label class="field">First name<input name="first_name" required></label>
+<label class="field">Last name<input name="last_name" required></label>
+<label class="field">Administrator email<input name="email" type="email" required></label>
+<label class="field">Password<input name="password" type="password" minlength="12" required><small class="mut">At least 12 characters.</small></label>
+<button class="btn">Create super administrator</button><div id="m" class="msg"></div>
+</form><p class="mut">After setup, go to <a href="/app/">the Exam Platform</a>.</p></main>
+<script>
+const f=document.getElementById('f'),m=document.getElementById('m');
+f.addEventListener('submit',async e=>{e.preventDefault();m.className='msg';m.textContent='Creating administrator…';const body=Object.fromEntries(new FormData(f));try{const r=await fetch('/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Setup failed');m.className='msg ok';m.textContent='Administrator created. You can now sign in.';f.querySelector('button').disabled=true}catch(err){m.className='msg bad';m.textContent=err.message}});
+</script></body></html>
