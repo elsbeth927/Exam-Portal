@@ -16,5 +16,5 @@
 </form><p class="mut">After setup, go to <a href="/app/">the Exam Platform</a>.</p></main>
 <script>
 const f=document.getElementById('f'),m=document.getElementById('m');
-f.addEventListener('submit',async e=>{e.preventDefault();m.className='msg';m.textContent='Creating administrator…';const body=Object.fromEntries(new FormData(f));try{const r=await fetch('/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Setup failed');m.className='msg ok';m.textContent='Administrator created. You can now sign in.';f.querySelector('button').disabled=true}catch(err){m.className='msg bad';m.textContent=err.message}});
+f.addEventListener('submit',async e=>{e.preventDefault();m.className='msg';m.textContent='Creating administrator…';const body=Object.fromEntries(new FormData(f));try{const r=await fetch('https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/initial-setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Setup failed');m.className='msg ok';m.textContent='Administrator created. You can now sign in.';f.querySelector('button').disabled=true}catch(err){m.className='msg bad';m.textContent=err.message}});
 </script></body></html>
