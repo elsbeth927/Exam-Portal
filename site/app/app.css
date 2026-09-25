@@ -11,3 +11,8 @@
 .integrity-warning.show{transform:translate(-50%,0)}
 .exam-watermark{position:fixed;inset:0;pointer-events:none;z-index:2;display:grid;place-items:center;font-size:24px;font-weight:800;color:rgba(20,32,42,.07);transform:rotate(-24deg);white-space:nowrap}
 .exam-paper{position:relative;z-index:3}
+
+.autosave-status{margin-top:6px;font-size:.86rem;font-weight:700}
+.autosave-status.saved{color:var(--ok)}
+.autosave-status.saving{color:#8a6500}
+.autosave-status.offline{color:var(--bad)}
