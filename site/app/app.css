@@ -16,3 +16,12 @@
 .autosave-status.saved{color:var(--ok)}
 .autosave-status.saving{color:#8a6500}
 .autosave-status.offline{color:var(--bad)}
+
+.source-material{margin-bottom:16px;position:relative;z-index:3}
+.source-material summary{cursor:pointer;padding:4px 0 12px}
+.source-material pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.55;margin:0;max-height:58vh;overflow:auto;background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:14px;user-select:none}
+.result-summary{margin:10px 0 16px;font-size:1.05rem}
+.review-list{display:grid;gap:10px;max-height:65vh;overflow:auto}
+.review-item{border:1px solid var(--line);border-left:5px solid #aeb7c0;border-radius:10px;padding:12px;background:#fff}
+.review-item.correct{border-left-color:#2d8a57;background:#f5fbf7}
+.review-item.incorrect{border-left-color:#b94747;background:#fff7f7}
