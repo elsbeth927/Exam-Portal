@@ -1,5 +1,5 @@
 (()=>{const R=document.getElementById('root');const API_BASE='https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/exam-api';let state={me:null,csrf:null,view:'dashboard',data:{},token:sessionStorage.getItem('rb_session')||'',setupRequired:false,config:{classes:[]}};const h=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));async function api(path,opt={}){const headers={'content-type':'application/json',...(opt.headers||{})};if(state.token)headers['authorization']='Bearer '+state.token;if(state.csrf&&!['GET','HEAD'].includes((opt.method||'GET').toUpperCase()))headers['x-csrf-token']=state.csrf;const r=await fetch(API_BASE+path,{...opt,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
-async function init(){try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
+async function init(){if(location.hash.includes('type=recovery')){location.replace('/app/reset.html'+location.hash);return}if(location.hash.includes('type=signup')||location.hash.includes('type=email')){sessionStorage.setItem('rb_email_verified','1');history.replaceState(null,'',location.pathname+location.search)}try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
 function login(){
   const classes=(state.config?.classes||[]);
   R.innerHTML='<div class="login"><div class="loginbox stack auth-card">'+
@@ -9,7 +9,7 @@ function login(){
       '<label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>'+
       '<button class="btn">Sign in</button>'+
       '<button id="forgot" class="auth-link" type="button">Forgot password?</button>'+
-      '<div id="le" class="error"></div>'+
+      '<div id="le" class="error"></div>'+(sessionStorage.getItem('rb_email_verified')==='1'?'<div class="success">Email verified. You can sign in now.</div>':'')+
     '</form>'+
     '<div class="auth-separator"><span>Students</span></div>'+
     '<button id="register-student" class="btn alt" type="button">Register as a student</button>'+
