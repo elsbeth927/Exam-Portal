@@ -1,6 +1,69 @@
-(()=>{const R=document.getElementById('root');const API_BASE='https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/exam-api';let state={me:null,csrf:null,view:'dashboard',data:{},token:sessionStorage.getItem('rb_session')||'',setupRequired:false};const h=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));async function api(path,opt={}){const headers={'content-type':'application/json',...(opt.headers||{})};if(state.token)headers['authorization']='Bearer '+state.token;if(state.csrf&&!['GET','HEAD'].includes((opt.method||'GET').toUpperCase()))headers['x-csrf-token']=state.csrf;const r=await fetch(API_BASE+path,{...opt,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
-async function init(){try{const cfg=await api('/config');state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
-function login(){R.innerHTML='<div class="login"><form id="lf" class="loginbox stack"><div><div class="mut">Redbridge International School</div><h1>Exam Platform</h1><p class="mut">Sign in with your school account.</p></div><label class="field">Email<input name="email" type="email" required></label><label class="field">Password<input name="password" type="password" required></label><button class="btn">Sign in</button>'+(state.setupRequired?'<a class="btn alt" href="/app/setup.html" style="text-align:center">First-time administrator setup</a>':'')+'<div id="le" class="error"></div></form></div>';document.getElementById('lf').onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{const d=await api('/login',{method:'POST',body:JSON.stringify(f)});state.me=d.user;state.csrf=d.csrf;state.token=d.session_token||'';if(state.token)sessionStorage.setItem('rb_session',state.token);render()}catch(x){document.getElementById('le').textContent=x.message}}}
+(()=>{const R=document.getElementById('root');const API_BASE='https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/exam-api';let state={me:null,csrf:null,view:'dashboard',data:{},token:sessionStorage.getItem('rb_session')||'',setupRequired:false,config:{classes:[]}};const h=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));async function api(path,opt={}){const headers={'content-type':'application/json',...(opt.headers||{})};if(state.token)headers['authorization']='Bearer '+state.token;if(state.csrf&&!['GET','HEAD'].includes((opt.method||'GET').toUpperCase()))headers['x-csrf-token']=state.csrf;const r=await fetch(API_BASE+path,{...opt,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
+async function init(){try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
+function login(){
+  const classes=(state.config?.classes||[]);
+  R.innerHTML='<div class="login"><div class="loginbox stack auth-card">'+
+    '<div><div class="mut">Redbridge International School</div><h1>Exam Platform</h1><p class="mut">Sign in with your school account.</p></div>'+
+    '<form id="lf" class="stack">'+
+      '<label class="field">Email<input name="email" type="email" autocomplete="email" required></label>'+
+      '<label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>'+
+      '<button class="btn">Sign in</button>'+
+      '<button id="forgot" class="auth-link" type="button">Forgot password?</button>'+
+      '<div id="le" class="error"></div>'+
+    '</form>'+
+    '<div class="auth-separator"><span>Students</span></div>'+
+    '<button id="register-student" class="btn alt" type="button">Register as a student</button>'+
+    (state.setupRequired?'<a class="btn alt" href="/app/setup.html" style="text-align:center">First-time administrator setup</a>':'')+
+  '</div></div>';
+
+  document.getElementById('lf').onsubmit=async e=>{
+    e.preventDefault();const f=Object.fromEntries(new FormData(e.target));
+    try{
+      const d=await api('/login',{method:'POST',body:JSON.stringify(f)});
+      state.me=d.user;state.csrf=d.csrf;state.token=d.session_token||'';
+      if(state.token)sessionStorage.setItem('rb_session',state.token);
+      render();
+    }catch(x){document.getElementById('le').textContent=x.message}
+  };
+
+  document.getElementById('register-student').onclick=()=>modal(
+    '<h3>Student registration</h3>'+
+    '<p class="mut">Use the student’s own email address. A verification email may be required before the first sign-in.</p>'+
+    '<form id="regf" class="stack">'+
+      '<label class="field">First name<input name="first_name" autocomplete="given-name" required></label>'+
+      '<label class="field">Last name<input name="last_name" autocomplete="family-name" required></label>'+
+      '<label class="field">Class<select name="class_id" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+x.id+'">'+h(x.name)+'</option>').join('')+'</select></label>'+
+      '<label class="field">Email<input name="email" type="email" autocomplete="email" required></label>'+
+      '<label class="field">Create password<input name="password" type="password" minlength="12" autocomplete="new-password" required></label>'+
+      '<div class="mut auth-help">Minimum 12 characters with uppercase, lowercase and a number.</div>'+
+      '<label class="field">Confirm password<input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required></label>'+
+      '<button class="btn">Create student account</button>'+
+      '<div id="re" class="error"></div><div id="rok" class="success"></div>'+
+    '</form>',
+    ()=>document.getElementById('regf').onsubmit=async e=>{
+      e.preventDefault();
+      const o=Object.fromEntries(new FormData(e.target));
+      const er=document.getElementById('re'),ok=document.getElementById('rok');er.textContent='';ok.textContent='';
+      if(o.password!==o.confirm_password){er.textContent='Passwords do not match.';return}
+      delete o.confirm_password;
+      try{
+        const d=await api('/student/register',{method:'POST',body:JSON.stringify(o)});
+        ok.textContent=d.message||'Account created. Check your email, then sign in.';
+        e.target.reset();
+      }catch(x){er.textContent=x.message}
+    }
+  );
+
+  document.getElementById('forgot').onclick=()=>modal(
+    '<h3>Reset password</h3>'+
+    '<p class="mut">Enter the email used for the student account. We will send a secure password-reset link.</p>'+
+    '<form id="fpf" class="stack"><label class="field">Registered email<input name="email" type="email" autocomplete="email" required></label><button class="btn">Send reset link</button><div id="fpe" class="error"></div><div id="fpok" class="success"></div></form>',
+    ()=>document.getElementById('fpf').onsubmit=async e=>{
+      e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const er=document.getElementById('fpe'),ok=document.getElementById('fpok');er.textContent='';ok.textContent='';
+      try{const d=await api('/auth/forgot-password',{method:'POST',body:JSON.stringify(o)});ok.textContent=d.message||'If the email is registered, a reset link has been sent.'}catch(x){er.textContent=x.message}
+    }
+  );
+}
 function navItems(){const r=state.me.role;if(r==='student')return[['dashboard','Dashboard'],['student-exams','My Exams'],['student-results','My Results']];const a=[['dashboard','Dashboard'],['questions','Question Bank'],['exams','Exams']];if(r==='academic_admin'||r==='super_admin')a.push(['classes','Classes & Subjects'],['users','Users'],['audit','Audit Log']);return a}
 function render(){R.innerHTML='<div class="shell"><aside class="rail"><div class="school-logo-wrap"><img class="school-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School logo"></div><div class="logo"><span>Redbridge</span> Exam Platform</div><div class="nav">'+navItems().map(([k,l])=>'<button data-v="'+k+'" class="'+(state.view===k?'active':'')+'">'+l+'</button>').join('')+'</div></aside><main class="main"><div class="top"><div><h2 style="margin:0">'+h(navItems().find(x=>x[0]===state.view)?.[1]||'Platform')+'</h2><div class="mut">'+h(state.me.first_name+' '+state.me.last_name)+' · '+h(state.me.role.replaceAll('_',' '))+'</div></div><button id="logout" class="btn alt">Sign out</button></div><div id="page"></div></main></div>';document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});document.getElementById('logout').onclick=async()=>{try{await api('/logout',{method:'POST',body:'{}'})}finally{sessionStorage.removeItem('rb_session');state={me:null,csrf:null,view:'dashboard',data:{},token:''};login()}};loadView()}
 async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){const d=await api('/dashboard');P.innerHTML='<div class="grid">'+Object.entries(d).map(([k,v])=>'<div class="card metric"><div class="mut">'+h(k.replaceAll('_',' '))+'</div><b>'+h(v)+'</b></div>').join('')+'</div>'}
