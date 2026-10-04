@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Reset Password · Redbridge Exam Platform</title>
+  <meta name="theme-color" content="#14202a">
+  <link rel="icon" href="/app/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app/app.css">
+</head>
+<body>
+  <div class="reset-shell">
+    <div class="card reset-card stack">
+      <div>
+        <div class="mut">Redbridge International School</div>
+        <h1>Choose a new password</h1>
+        <p class="mut">Enter a new secure password for your student account.</p>
+      </div>
+      <form id="rf" class="stack">
+        <label class="field">New password
+          <input name="password" type="password" minlength="12" autocomplete="new-password" required>
+        </label>
+        <div class="mut auth-help">Minimum 12 characters with uppercase, lowercase and a number.</div>
+        <label class="field">Confirm new password
+          <input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required>
+        </label>
+        <button class="btn">Update password</button>
+        <div id="err" class="error"></div>
+        <div id="ok" class="success"></div>
+      </form>
+      <a class="btn alt" href="/app/" style="text-align:center">Back to sign in</a>
+    </div>
+  </div>
+<script>
+(()=> {
+  const API='https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/exam-api';
+  const params=new URLSearchParams(location.hash.replace(/^#/,''));
+  const token=params.get('access_token');
+  const type=params.get('type');
+  const hashError=params.get('error_description');
+  history.replaceState(null,'',location.pathname+location.search);
+  const form=document.getElementById('rf'),err=document.getElementById('err'),ok=document.getElementById('ok');
+  if(hashError){err.textContent=hashError;form.querySelector('button').disabled=true;return}
+  if(!token||type!=='recovery'){err.textContent='This password reset link is invalid or has expired. Please request a new reset link from the sign-in page.';form.querySelector('button').disabled=true;return}
+  form.onsubmit=async e=>{
+    e.preventDefault();err.textContent='';ok.textContent='';
+    const fd=new FormData(form),pw=String(fd.get('password')||''),cp=String(fd.get('confirm_password')||'');
+    if(pw!==cp){err.textContent='Passwords do not match.';return}
+    if(pw.length<12||!/[A-Z]/.test(pw)||!/[a-z]/.test(pw)||!/[0-9]/.test(pw)){err.textContent='Password must be at least 12 characters and include uppercase, lowercase and a number.';return}
+    const btn=form.querySelector('button');btn.disabled=true;btn.textContent='Updating…';
+    try{
+      const r=await fetch(API+'/auth/reset-password',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({access_token:token,password:pw})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||'Could not update password.');
+      ok.textContent=d.message||'Password updated. You can now sign in.';
+      form.reset();
+    }catch(x){err.textContent=x.message}finally{btn.disabled=false;btn.textContent='Update password'}
+  };
+})();
+</script>
+</body>
+</html>
