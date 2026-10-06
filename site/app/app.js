@@ -186,9 +186,12 @@ async function exam(aid){
   const checkpoint=async()=>{
     if(closed)return;
     setSaveStatus('Checkpoint saving…','saving');
-    const jobs=d.questions.map(q=>saveOne(String(q.id),currentAnswer(q),{silent:true}));
-    const results=await Promise.allSettled(jobs);
-    if(results.some(x=>x.status==='rejected'))setSaveStatus('Some answers remain in local backup','offline');
+    let failed=false;
+    for(const q of d.questions){
+      try{await saveOne(String(q.id),currentAnswer(q),{silent:true})}
+      catch{failed=true}
+    }
+    if(failed)setSaveStatus('Some answers remain in local backup','offline');
     else setSaveStatus('Checkpoint saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),'saved');
   };
 
@@ -318,5 +321,6 @@ async function exam(aid){
   autosaveHandle=setInterval(checkpoint,60000);
   if(!document.fullscreenElement)warn('Fullscreen is required. Click Fullscreen before continuing.');
 }
-function answerHtml(q){if(q.type==='mcq'||q.type==='truefalse')return (q.options||[]).map(o=>'<label class="choice"><input type="radio" data-q="'+q.id+'" name="q'+q.id+'" value="'+h(o.id)+'" '+(q.answer===o.id?'checked':'')+'> '+h(o.text)+'</label>').join('');if(q.type==='multi')return (q.options||[]).map(o=>'<label class="choice"><input type="checkbox" data-q="'+q.id+'" value="'+h(o.id)+'" '+(Array.isArray(q.answer)&&q.answer.includes(o.id)?'checked':'')+'> '+h(o.text)+'</label>').join('');return '<label class="field"><input data-q="'+q.id+'" value="'+h(q.answer??'')+'" autocomplete="off"></label>'}
+function cleanExamOption(v){let s=String(v??'').trim();s=s.replace(/\s+Book\s+\d+\s+Part\s+[A-Z].*$/i,'').trim();s=s.replace(/\s+(Elementary|Pre-Intermediate|Intermediate|Upper-Intermediate|Advanced)\s+Test\s*[-:]?\s*\d+.*$/i,'').trim();return s}
+function answerHtml(q){if(q.type==='mcq'||q.type==='truefalse')return (q.options||[]).map(o=>'<label class="choice"><input type="radio" data-q="'+q.id+'" name="q'+q.id+'" value="'+h(o.id)+'" '+(q.answer===o.id?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');if(q.type==='multi')return (q.options||[]).map(o=>'<label class="choice"><input type="checkbox" data-q="'+q.id+'" value="'+h(o.id)+'" '+(Array.isArray(q.answer)&&q.answer.includes(o.id)?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');return '<label class="field"><input data-q="'+q.id+'" value="'+h(q.answer??'')+'" autocomplete="off"></label>'}
 init()})();
