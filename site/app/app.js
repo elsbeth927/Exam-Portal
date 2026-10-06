@@ -1,4 +1,16 @@
 (()=>{const R=document.getElementById('root');const API_BASE='https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/exam-api';let state={me:null,csrf:null,view:'dashboard',data:{},token:sessionStorage.getItem('rb_session')||'',setupRequired:false,config:{classes:[]}};const h=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));async function api(path,opt={}){const headers={'content-type':'application/json',...(opt.headers||{})};if(state.token)headers['authorization']='Bearer '+state.token;if(state.csrf&&!['GET','HEAD'].includes((opt.method||'GET').toUpperCase()))headers['x-csrf-token']=state.csrf;const r=await fetch(API_BASE+path,{...opt,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
+async function publicApi(path,opt={}){
+  const headers={'content-type':'application/json',...(opt.headers||{})};
+  let r;
+  try{
+    r=await fetch('/api'+path,{...opt,headers,credentials:'same-origin'});
+  }catch(e){
+    throw new Error('Could not reach the registration service. Please check your connection and try again.');
+  }
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||d.message||('Request failed ('+r.status+')'));
+  return d;
+}
 async function init(){if(location.hash.includes('type=recovery')){location.replace('/app/reset.html'+location.hash);return}if(location.hash.includes('type=signup')||location.hash.includes('type=email')){sessionStorage.setItem('rb_email_verified','1');history.replaceState(null,'',location.pathname+location.search)}try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
 function login(){
   const classes=(state.config?.classes||[]);
@@ -58,7 +70,7 @@ function login(){
       if(o.password!==o.confirm_password){er.textContent='Passwords do not match.';return}
       delete o.confirm_password;
       try{
-        const d=await api('/student/register',{method:'POST',body:JSON.stringify(o)});
+        const d=await publicApi('/student/register',{method:'POST',body:JSON.stringify(o)});
         ok.textContent=d.message||'Account created. Check your email, then sign in.';
         e.target.reset();
       }catch(x){er.textContent=x.message}
@@ -71,7 +83,7 @@ function login(){
     '<form id="fpf" class="stack"><label class="field">Registered email<input name="email" type="email" autocomplete="email" required></label><button class="btn">Send reset link</button><div id="fpe" class="error"></div><div id="fpok" class="success"></div></form>',
     ()=>document.getElementById('fpf').onsubmit=async e=>{
       e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const er=document.getElementById('fpe'),ok=document.getElementById('fpok');er.textContent='';ok.textContent='';
-      try{const d=await api('/auth/forgot-password',{method:'POST',body:JSON.stringify(o)});ok.textContent=d.message||'If the email is registered, a reset link has been sent.'}catch(x){er.textContent=x.message}
+      try{const d=await publicApi('/auth/forgot-password',{method:'POST',body:JSON.stringify(o)});ok.textContent=d.message||'If the email is registered, a reset link has been sent.'}catch(x){er.textContent=x.message}
     }
   );
 }
