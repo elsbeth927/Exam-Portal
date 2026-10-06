@@ -68,3 +68,7 @@
 }
 
 .student-grade{margin-top:3px;font-size:.92rem;font-weight:800;color:#315d8c}
+
+.motivation-card{margin-top:18px;padding:22px 24px}
+.motivation-label{font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#7a8793;margin-bottom:8px}
+.motivation-card blockquote{margin:0;font-size:1.15rem;line-height:1.5;font-weight:700;color:#203040}
