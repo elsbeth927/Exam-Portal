@@ -112,3 +112,8 @@
 .term-resume-card{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:16px;border-color:#e2c36a;background:#fffdf3}
 .public-term-shell .main{max-width:1200px;width:100%}
 @media(max-width:760px){.public-login-layout{grid-template-columns:1fr}.public-login-rail{min-height:auto}.public-rail-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px}.public-rail-logo,.public-login-rail .logo{grid-column:1/-1}.term-resume-card{align-items:flex-start;flex-direction:column}}
+
+.term-main-btn{margin-top:10px;background:#17384f;color:#fff;border-color:#17384f}
+.term-main-btn:hover{filter:brightness(1.06)}
+.term-filter-summary{margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.term-filter-summary .mut{flex:1;min-width:220px}
