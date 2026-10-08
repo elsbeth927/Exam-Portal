@@ -278,7 +278,7 @@ async function exam(aid){
       '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
       (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
       '<form id="xaf" class="card exam-paper">'+
-      d.questions.map((q,i)=>'<div class="examq"><b>'+(i+1)+'. '+h(q.text)+'</b><div class="mut">'+h(q.marks)+' mark(s)</div>'+answerHtml(q)+'</div>').join('')+
+      d.questions.map((q,i)=>'<div class="examq"><div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+
       '<button class="btn" type="submit">Submit exam</button></form>';
 
     document.getElementById('fsbtn').onclick=ensureFullscreen;
@@ -290,7 +290,7 @@ async function exam(aid){
         if(!q)return;
         queueSave(String(qid),currentAnswer(q));
       };
-      el.addEventListener(el.type==='text'?'input':'change',handler);
+      el.addEventListener((el.tagName==='TEXTAREA'||el.type==='text')?'input':'change',handler);
     });
 
     document.getElementById('xaf').onsubmit=async e=>{
@@ -322,5 +322,5 @@ async function exam(aid){
   if(!document.fullscreenElement)warn('Fullscreen is required. Click Fullscreen before continuing.');
 }
 function cleanExamOption(v){let s=String(v??'').trim();s=s.replace(/\s+Book\s+\d+\s+Part\s+[A-Z].*$/i,'').trim();s=s.replace(/\s+(Elementary|Pre-Intermediate|Intermediate|Upper-Intermediate|Advanced)\s+Test\s*[-:]?\s*\d+.*$/i,'').trim();return s}
-function answerHtml(q){if(q.type==='mcq'||q.type==='truefalse')return (q.options||[]).map(o=>'<label class="choice"><input type="radio" data-q="'+q.id+'" name="q'+q.id+'" value="'+h(o.id)+'" '+(q.answer===o.id?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');if(q.type==='multi')return (q.options||[]).map(o=>'<label class="choice"><input type="checkbox" data-q="'+q.id+'" value="'+h(o.id)+'" '+(Array.isArray(q.answer)&&q.answer.includes(o.id)?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');return '<label class="field"><input data-q="'+q.id+'" value="'+h(q.answer??'')+'" autocomplete="off"></label>'}
+function answerHtml(q){if(q.type==='mcq'||q.type==='truefalse')return (q.options||[]).map(o=>'<label class="choice"><input type="radio" data-q="'+q.id+'" name="q'+q.id+'" value="'+h(o.id)+'" '+(q.answer===o.id?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');if(q.type==='multi')return (q.options||[]).map(o=>'<label class="choice"><input type="checkbox" data-q="'+q.id+'" value="'+h(o.id)+'" '+(Array.isArray(q.answer)&&q.answer.includes(o.id)?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');if(q.type==='written'){const rows=Math.max(2,Math.min(18,Number(q.answer_lines||3)));return '<label class="field written-answer-field"><textarea class="written-answer" data-q="'+q.id+'" rows="'+rows+'" autocomplete="off" spellcheck="true" placeholder="Write your answer here...">'+h(q.answer??'')+'</textarea></label>';}return '<label class="field"><input data-q="'+q.id+'" value="'+h(q.answer??'')+'" autocomplete="off"></label>'}
 init()})();
