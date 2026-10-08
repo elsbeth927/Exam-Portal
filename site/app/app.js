@@ -123,6 +123,7 @@ async function openMarking(aid){
   try{
     const d=await api('/marking/attempts/'+aid);
     const a=d.attempt;
+    const canPublish=Array.isArray(state.me.permissions)&&state.me.permissions.includes('PUBLISH_RESULTS');
     P.innerHTML=
       '<div class="marking-head card"><div><button id="back-marking" class="btn alt sm">← Back to submissions</button><h2 class="marking-title">'+h(a.title)+'</h2><div class="mut">'+h(a.student.name)+' · '+h(a.student.class_name||'No class')+' · '+h(a.student.email)+'</div><div class="mut">Submitted '+h(a.submitted_at?new Date(a.submitted_at).toLocaleString():'—')+'</div></div>'+
       '<div class="marking-score"><div><span>Current score</span><b id="marking-score-value">'+h(a.score)+' / '+h(a.total)+'</b></div><div><span>Status</span><b id="marking-publish-status">'+(a.results_published?'Published':'Not published')+'</b></div></div></div>'+
@@ -134,7 +135,7 @@ async function openMarking(aid){
         '<div class="student-response"><div class="response-label">Student response</div><div class="response-body">'+(String(q.answer??'').trim()?h(q.answer):'<em>No answer</em>')+'</div></div>'+
         '<details class="mark-scheme"><summary>Show mark scheme / rubric</summary><div>'+h(q.mark_scheme||'No mark scheme stored.').replaceAll('\\n','<br>')+'</div></details>'+
       '</section>').join('')+
-      '<div class="card marking-actions"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><button class="btn" type="submit">Save marks</button><button id="publish-result" class="btn '+(a.results_published?'alt':'')+'" type="button">'+(a.results_published?'Unpublish results':'Publish results')+'</button></div><div id="marking-msg" class="success"></div></div>'+
+      '<div class="card marking-actions"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><button class="btn" type="submit">Save marks</button>'+(canPublish?'<button id="publish-result" class="btn '+(a.results_published?'alt':'')+'" type="button">'+(a.results_published?'Unpublish results':'Publish results')+'</button>':'<span class="mut">An academic administrator publishes final results.</span>')+'</div><div id="marking-msg" class="success"></div></div>'+
       '</form>';
 
     document.getElementById('back-marking').onclick=()=>{state.view='marking';render()};
@@ -148,7 +149,7 @@ async function openMarking(aid){
         document.getElementById('marking-msg').textContent='Marks saved successfully.';
       }catch(x){document.getElementById('marking-msg').className='error';document.getElementById('marking-msg').textContent=x.message}
     };
-    document.getElementById('publish-result').onclick=async e=>{
+    if(canPublish)document.getElementById('publish-result').onclick=async e=>{
       const publish=!a.results_published;
       if(publish&&!confirm('Publish the results for this exam? Students will be able to see their scores and answer review.'))return;
       try{
