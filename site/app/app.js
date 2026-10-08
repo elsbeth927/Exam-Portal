@@ -25,11 +25,13 @@ function login(){
     '</form>'+
     '<div class="auth-separator"><span>Students</span></div>'+
     '<button id="register-student" class="btn alt" type="button">Register as a student</button>'+
+    '<button id="main-term-exams" class="btn term-main-btn" type="button">Term Exams</button>'+
     (state.setupRequired?'<a class="btn alt" href="/app/setup.html" style="text-align:center">First-time administrator setup</a>':'')+
   '</div></div>';
 
   document.getElementById('public-signin-tab').onclick=()=>login();
   document.getElementById('public-term-tab').onclick=()=>showPublicTermExams();
+  document.getElementById('main-term-exams').onclick=()=>openTermExamChooser();
 
   document.getElementById('lf').onsubmit=async e=>{
     e.preventDefault();const f=Object.fromEntries(new FormData(e.target));
@@ -121,7 +123,31 @@ else if(state.view==='student-exams'){const es=await api('/student/exams');P.inn
 else if(state.view==='student-results'){const rs=await api('/student/results');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Exam</th><th>Score</th><th>%</th><th>Status</th><th></th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(x.title)+'</td><td>'+(x.results_published?h(x.score+'/'+x.total):'Not released')+'</td><td>'+(x.results_published?h(x.percentage):'—')+'</td><td>'+h(x.results_published?(x.passed?'Pass':'Below pass mark'):'Pending')+'</td><td>'+(x.results_published?'<button class="btn sm review-result" data-id="'+x.id+'">Review answers</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';document.querySelectorAll('.review-result').forEach(b=>b.onclick=async()=>{const d=await api('/student/attempts/'+b.dataset.id+'/result');const fmt=v=>Array.isArray(v)?v.join(', '):(v===null||v===undefined||v===''?'—':String(v));modal('<h3>'+h(d.title)+'</h3><div class="result-summary"><b>'+h(d.score+'/'+d.total)+'</b> · '+h(d.percentage)+'% · '+h(d.passed?'Pass':'Below pass mark')+'</div><div class="review-list">'+d.questions.map(q=>'<div class="review-item '+(q.is_correct===true?'correct':q.is_correct===false?'incorrect':'')+'"><div><b>Question '+h(q.number)+'</b></div><div class="mut">'+h(q.text||'')+'</div><div>Your answer: <b>'+h(fmt(q.answer))+'</b></div><div>Correct answer: <b>'+h(fmt(q.correct))+'</b></div><div>Marks: '+h(q.marks_awarded)+'</div></div>').join('')+'</div>')})}
 else if(state.view==='audit'){const rs=await api('/audit');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(new Date(x.at).toLocaleString())+'</td><td>'+h(x.user_label||'')+'</td><td>'+h(x.action)+'</td><td>'+h((x.entity||'')+' '+(x.entity_id||''))+'</td></tr>').join('')+'</tbody></table></div>'}}catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}}
 
-async function showPublicTermExams(inShell=false){
+async function openTermExamChooser(){
+  try{
+    if(!(state.config?.classes||[]).length)state.config=await publicApi('/config');
+    const rows=await publicApi('/term-exams');
+    const classes=(state.config?.classes||[]);
+    const subjects=[...new Set(rows.map(x=>x.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    if(!rows.length){alert('No Term Exams are open at the moment.');return}
+    modal(
+      '<h3>Term Exams</h3><p class="mut">Choose your class and subject. No account or registration is required.</p>'+
+      '<form id="term-filter-form" class="stack">'+
+      '<label class="field">Class<select name="class_id" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+x.id+'" data-grade="'+x.grade+'" data-name="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>'+
+      '<label class="field">Subject<select name="subject" required><option value="">Select subject</option>'+subjects.map(s=>'<option value="'+h(s)+'">'+h(s)+'</option>').join('')+'</select></label>'+
+      '<button class="btn">Show available Term Exams</button><div id="term-filter-error" class="error"></div></form>',
+      ()=>document.getElementById('term-filter-form').onsubmit=e=>{
+        e.preventDefault();
+        const fd=new FormData(e.target),sel=e.target.querySelector('[name="class_id"]'),opt=sel.options[sel.selectedIndex];
+        const className=opt?.dataset?.name||opt?.text||'',grade=Number(opt?.dataset?.grade||0),subject=String(fd.get('subject')||'');
+        closeModal();
+        showPublicTermExams(false,{className,grade,subject});
+      }
+    );
+  }catch(e){alert(e.message||'Could not load Term Exams.')}
+}
+
+async function showPublicTermExams(inShell=false,filters=null){
   let mount;
   if(inShell&&state.me){
     mount=document.getElementById('page');
@@ -134,15 +160,20 @@ async function showPublicTermExams(inShell=false){
   }
   try{
     if(!(state.config?.classes||[]).length)state.config=await api('/config');
-    const rows=await publicApi('/term-exams');
+    let rows=await publicApi('/term-exams');
+    if(filters){
+      rows=rows.filter(x=>(!filters.grade||Number(x.grade)===Number(filters.grade))&&(!filters.subject||x.subject===filters.subject));
+    }
     const resumeId=sessionStorage.getItem('rb_term_attempt');
     const resumeToken=sessionStorage.getItem('rb_term_token');
     const resume=resumeId&&resumeToken?'<div class="card term-resume-card"><div><b>Unfinished Term Exam</b><div class="mut">Your timer has continued running. Resume only if this is your current exam.</div></div><button class="btn" id="resume-term-exam">Resume</button></div>':'';
-    mount.innerHTML=resume+'<div class="stack">'+(rows.length?rows.map(x=>'<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · Grade '+h(x.grade)+' · '+h(x.duration_min)+' min</div></div><button class="btn public-term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></div>').join(''):'<div class="card">No Term Exams are open at the moment.</div>')+'</div>';
+    const filterHead=filters?'<div class="card term-filter-summary"><b>'+h(filters.className)+' · '+h(filters.subject)+'</b><div class="mut">Available Term Exams for your selection</div><button id="change-term-filter" class="btn alt sm" type="button">Change class / subject</button></div>':'';
+    mount.innerHTML=resume+filterHead+'<div class="stack">'+(rows.length?rows.map(x=>'<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · Grade '+h(x.grade)+' · '+h(x.duration_min)+' min</div></div><button class="btn public-term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></div>').join(''):'<div class="card">No Term Exams are open for this class and subject.</div>')+'</div>';
+    if(filters&&document.getElementById('change-term-filter'))document.getElementById('change-term-filter').onclick=()=>openTermExamChooser();
     if(resumeId&&resumeToken&&document.getElementById('resume-term-exam'))document.getElementById('resume-term-exam').onclick=()=>termExam(Number(resumeId),resumeToken);
     document.querySelectorAll('.public-term-start').forEach(btn=>btn.onclick=()=>{
       const classes=(state.config?.classes||[]);
-      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your details exactly as they appear on the school list.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label><label class="field">Class<select name="class_name" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label><button class="btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
+      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your name exactly as it appears on the school list.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label>'+(filters?'<label class="field">Class<input name="class_name" value="'+h(filters.className)+'" readonly></label>':'<label class="field">Class<select name="class_name" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>')+'<button class="btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
         e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
         if(!confirm('Ready to begin? Once you continue, the timer starts immediately and continues even if the page is closed.'))return;
         try{
