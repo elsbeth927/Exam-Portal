@@ -102,3 +102,13 @@
 .marking-actions{position:sticky;bottom:12px;z-index:4;box-shadow:0 8px 28px rgba(15,36,56,.12)}
 .small{font-size:.82rem}
 @media(max-width:760px){.marking-head,.marking-qhead{flex-direction:column}.marking-score{width:100%}.marking-score>div{flex:1}.mark-box{align-self:flex-start}}
+
+.public-login-layout{display:grid;grid-template-columns:220px minmax(320px,430px);gap:28px;align-items:center;justify-content:center}
+.public-login-rail{align-self:stretch;min-height:420px;background:#142631;border-radius:22px;padding:20px;display:flex;align-items:flex-start}
+.public-rail-inner{width:100%}
+.public-rail-logo{display:block;width:100%;max-height:90px;object-fit:contain;background:#fff;border-radius:12px;padding:8px;margin-bottom:18px}
+.public-rail-btn{display:block;width:100%;text-align:left;background:transparent;color:#d6e0e7;border:0;padding:12px;border-radius:9px;margin:5px 0;font-weight:800;cursor:pointer}
+.public-rail-btn.active,.public-rail-btn:hover{background:#263946;color:#fff}
+.term-resume-card{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:16px;border-color:#e2c36a;background:#fffdf3}
+.public-term-shell .main{max-width:1200px;width:100%}
+@media(max-width:760px){.public-login-layout{grid-template-columns:1fr}.public-login-rail{min-height:auto}.public-rail-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px}.public-rail-logo,.public-login-rail .logo{grid-column:1/-1}.term-resume-card{align-items:flex-start;flex-direction:column}}
