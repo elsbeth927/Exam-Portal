@@ -14,7 +14,7 @@ async function publicApi(path,opt={}){
 async function init(){if(location.hash.includes('type=recovery')){location.replace('/app/reset.html'+location.hash);return}if(location.hash.includes('type=signup')||location.hash.includes('type=email')){sessionStorage.setItem('rb_email_verified','1');history.replaceState(null,'',location.pathname+location.search)}try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
 function login(){
   const classes=(state.config?.classes||[]);
-  R.innerHTML='<div class="login"><div class="loginbox stack auth-card">'+
+  R.innerHTML='<div class="login public-login-layout"><aside class="public-login-rail"><div class="public-rail-inner"><img class="public-rail-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School"><div class="logo"><span>Redbridge</span> Exam Platform</div><button id="public-signin-tab" class="public-rail-btn active" type="button">Sign in</button><button id="public-term-tab" class="public-rail-btn" type="button">Term Exams</button></div></aside><div class="loginbox stack auth-card">'+
     '<div><div class="mut">Redbridge International School</div><h1>Exam Platform</h1><p class="mut">Sign in with your school account.</p></div>'+
     '<form id="lf" class="stack">'+
       '<label class="field">Email<input name="email" type="email" autocomplete="email" required></label>'+
@@ -27,6 +27,9 @@ function login(){
     '<button id="register-student" class="btn alt" type="button">Register as a student</button>'+
     (state.setupRequired?'<a class="btn alt" href="/app/setup.html" style="text-align:center">First-time administrator setup</a>':'')+
   '</div></div>';
+
+  document.getElementById('public-signin-tab').onclick=()=>login();
+  document.getElementById('public-term-tab').onclick=()=>showPublicTermExams();
 
   document.getElementById('lf').onsubmit=async e=>{
     e.preventDefault();const f=Object.fromEntries(new FormData(e.target));
@@ -87,7 +90,7 @@ function login(){
     }
   );
 }
-function navItems(){const r=state.me.role;if(r==='student')return[['dashboard','Dashboard'],['student-exams','My Exams'],['student-results','My Results']];const a=[['dashboard','Dashboard'],['questions','Question Bank'],['exams','Exams'],['marking','Marking']];if(r==='academic_admin'||r==='super_admin')a.push(['classes','Classes & Subjects'],['users','Users'],['audit','Audit Log']);return a}
+function navItems(){const r=state.me.role;if(r==='student')return[['dashboard','Dashboard'],['student-exams','My Exams'],['term-exams','Term Exams'],['student-results','My Results']];const a=[['dashboard','Dashboard'],['questions','Question Bank'],['exams','Exams'],['marking','Marking']];if(r==='academic_admin'||r==='super_admin')a.push(['classes','Classes & Subjects'],['users','Users'],['audit','Audit Log']);return a}
 function render(){R.innerHTML='<div class="shell"><aside class="rail"><button class="school-logo-wrap school-logo-home" id="home-logo" type="button" title="Return to Dashboard" aria-label="Return to Dashboard"><img class="school-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School logo"></button><div class="logo"><span>Redbridge</span> Exam Platform</div><div class="nav">'+navItems().map(([k,l])=>'<button data-v="'+k+'" class="'+(state.view===k?'active':'')+'">'+l+'</button>').join('')+'</div></aside><main class="main"><div class="top"><div><h2 style="margin:0">'+h(navItems().find(x=>x[0]===state.view)?.[1]||'Platform')+'</h2><div class="mut">'+h(state.me.first_name+' '+state.me.last_name)+' · '+h(state.me.role.replaceAll('_',' '))+'</div>'+(state.me.role==='student'&&state.me.class_name?'<div class="student-grade">'+h(state.me.class_name)+'</div>':'')+'</div><button id="logout" class="btn alt">Sign out</button></div><div id="page"></div></main></div>';document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});document.getElementById('home-logo').onclick=()=>{state.view='dashboard';render()};document.getElementById('logout').onclick=async()=>{try{await api('/logout',{method:'POST',body:'{}'})}finally{sessionStorage.removeItem('rb_session');state={me:null,csrf:null,view:'dashboard',data:{},token:'',setupRequired:false,config:state.config||{classes:[]}};login()}};loadView()}
 async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){const d=await api('/dashboard');let quote='';if(state.me.role==='student'){const quotes=[{src:'/app/motivation/motivation-1.webp?v=20261006-originalhq3',alt:'Small steps every day lead to big results.'},{src:'/app/motivation/motivation-2.webp?v=20261006-originalhq3',alt:"Believe you can, and you're halfway there."},{src:'/app/motivation/motivation-3.webp?v=20261006-originalhq3',alt:'Success begins with the courage to try.'},{src:'/app/motivation/motivation-4.webp?v=20261006-originalhq3',alt:'Dream big, work hard, stay focused.'},{src:'/app/motivation/motivation-5.webp?v=20261006-originalhq3',alt:'Mistakes are proof that you are learning.'}];let qi=Number(localStorage.getItem('rb_quote_image_index')||'-1');qi=(qi+1)%quotes.length;localStorage.setItem('rb_quote_image_index',String(qi));const q=quotes[qi];quote='<div class="card motivation-card"><img src="'+q.src+'" alt="'+h(q.alt)+'"></div>';}P.innerHTML='<div class="grid">'+Object.entries(d).map(([k,v])=>'<div class="card metric"><div class="mut">'+h(k.replaceAll('_',' '))+'</div><b>'+h(v)+'</b></div>').join('')+'</div>'+quote}
 else if(state.view==='classes'){const [cs,ss]=await Promise.all([api('/classes'),api('/subjects')]);P.innerHTML='<div class="grid"><div class="card"><h3 class="section-title">Classes</h3><form id="cf" class="row"><input name="name" placeholder="10A" required><input name="grade" type="number" min="1" max="11" placeholder="Grade" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+cs.map(x=>'<tr><td>'+h(x.name)+'</td><td>Grade '+h(x.grade)+'</td></tr>').join('')+'</tbody></table></div><div class="card"><h3 class="section-title">Subjects</h3><form id="sf" class="row"><input name="name" placeholder="Mathematics" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+ss.map(x=>'<tr><td>'+h(x.name)+'</td></tr>').join('')+'</tbody></table></div></div>';document.getElementById('cf').onsubmit=e=>submitForm(e,'/classes');document.getElementById('sf').onsubmit=e=>submitForm(e,'/subjects')}
@@ -102,6 +105,7 @@ else if(state.view==='marking'){
   '</tbody></table></div>':'<div class="empty-state">No submitted written exams are waiting for marking.</div>')+'</div>';
   document.querySelectorAll('.open-marking').forEach(b=>b.onclick=()=>openMarking(Number(b.dataset.id)));
 }
+else if(state.view==='term-exams'){await showPublicTermExams(true);return}
 else if(state.view==='student-exams'){const es=await api('/student/exams');P.innerHTML='<div class="stack">'+(es.length?es.map(x=>'<div class="card"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · '+h(x.duration_min)+' min</div></div><button class="btn start" data-id="'+x.id+'">'+(x.attempt_status==='IN_PROGRESS'?'Resume':'Start')+'</button></div></div>').join(''):'<div class="card">No assigned exams are available.</div>')+'</div>';document.querySelectorAll('.start').forEach(b=>b.onclick=async()=>{
   const card=b.closest('.card');
   const title=card?.querySelector('h3')?.textContent||'this exam';
@@ -116,6 +120,69 @@ else if(state.view==='student-exams'){const es=await api('/student/exams');P.inn
 })}
 else if(state.view==='student-results'){const rs=await api('/student/results');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Exam</th><th>Score</th><th>%</th><th>Status</th><th></th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(x.title)+'</td><td>'+(x.results_published?h(x.score+'/'+x.total):'Not released')+'</td><td>'+(x.results_published?h(x.percentage):'—')+'</td><td>'+h(x.results_published?(x.passed?'Pass':'Below pass mark'):'Pending')+'</td><td>'+(x.results_published?'<button class="btn sm review-result" data-id="'+x.id+'">Review answers</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';document.querySelectorAll('.review-result').forEach(b=>b.onclick=async()=>{const d=await api('/student/attempts/'+b.dataset.id+'/result');const fmt=v=>Array.isArray(v)?v.join(', '):(v===null||v===undefined||v===''?'—':String(v));modal('<h3>'+h(d.title)+'</h3><div class="result-summary"><b>'+h(d.score+'/'+d.total)+'</b> · '+h(d.percentage)+'% · '+h(d.passed?'Pass':'Below pass mark')+'</div><div class="review-list">'+d.questions.map(q=>'<div class="review-item '+(q.is_correct===true?'correct':q.is_correct===false?'incorrect':'')+'"><div><b>Question '+h(q.number)+'</b></div><div class="mut">'+h(q.text||'')+'</div><div>Your answer: <b>'+h(fmt(q.answer))+'</b></div><div>Correct answer: <b>'+h(fmt(q.correct))+'</b></div><div>Marks: '+h(q.marks_awarded)+'</div></div>').join('')+'</div>')})}
 else if(state.view==='audit'){const rs=await api('/audit');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(new Date(x.at).toLocaleString())+'</td><td>'+h(x.user_label||'')+'</td><td>'+h(x.action)+'</td><td>'+h((x.entity||'')+' '+(x.entity_id||''))+'</td></tr>').join('')+'</tbody></table></div>'}}catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}}
+
+async function showPublicTermExams(inShell=false){
+  let mount;
+  if(inShell&&state.me){
+    mount=document.getElementById('page');
+    mount.innerHTML='<div class="card">Loading term exams…</div>';
+  }else{
+    R.innerHTML='<div class="shell public-term-shell"><aside class="rail"><button class="school-logo-wrap" id="public-home-logo" type="button"><img class="school-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School logo"></button><div class="logo"><span>Redbridge</span> Exam Platform</div><div class="nav"><button id="public-signin-tab">Sign in</button><button class="active">Term Exams</button></div></aside><main class="main"><div class="top"><div><h2 style="margin:0">Term Exams</h2><div class="mut">No account or registration required.</div></div></div><div id="public-term-page"></div></main></div>';
+    document.getElementById('public-signin-tab').onclick=()=>login();
+    document.getElementById('public-home-logo').onclick=()=>login();
+    mount=document.getElementById('public-term-page');
+  }
+  try{
+    if(!(state.config?.classes||[]).length)state.config=await api('/config');
+    const rows=await publicApi('/term-exams');
+    const resumeId=sessionStorage.getItem('rb_term_attempt');
+    const resumeToken=sessionStorage.getItem('rb_term_token');
+    const resume=resumeId&&resumeToken?'<div class="card term-resume-card"><div><b>Unfinished Term Exam</b><div class="mut">Your timer has continued running. Resume only if this is your current exam.</div></div><button class="btn" id="resume-term-exam">Resume</button></div>':'';
+    mount.innerHTML=resume+'<div class="stack">'+(rows.length?rows.map(x=>'<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · Grade '+h(x.grade)+' · '+h(x.duration_min)+' min</div></div><button class="btn public-term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></div>').join(''):'<div class="card">No Term Exams are open at the moment.</div>')+'</div>';
+    if(resumeId&&resumeToken&&document.getElementById('resume-term-exam'))document.getElementById('resume-term-exam').onclick=()=>termExam(Number(resumeId),resumeToken);
+    document.querySelectorAll('.public-term-start').forEach(btn=>btn.onclick=()=>{
+      const classes=(state.config?.classes||[]);
+      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your details exactly as they appear on the school list.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label><label class="field">Class<select name="class_name" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label><button class="btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
+        e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
+        if(!confirm('Ready to begin? Once you continue, the timer starts immediately and continues even if the page is closed.'))return;
+        try{
+          const d=await publicApi('/term-exams/'+btn.dataset.id+'/start',{method:'POST',body:JSON.stringify(data)});
+          sessionStorage.setItem('rb_term_attempt',String(d.attempt_id));
+          sessionStorage.setItem('rb_term_token',d.term_token);
+          closeModal();
+          try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch{}
+          termExam(d.attempt_id,d.term_token);
+        }catch(x){document.getElementById('term-start-error').textContent=x.message}
+      });
+    });
+  }catch(e){mount.innerHTML='<div class="card error">'+h(e.message)+'</div>'}
+}
+
+async function termExam(aid,token){
+  R.innerHTML='<div class="main secure-exam"><div id="exam"></div></div>';
+  const E=document.getElementById('exam');
+  const termApi=async(path,opt={})=>publicApi(path,{...opt,headers:{...(opt.headers||{}),'x-term-token':token}});
+  const d=await termApi('/term-attempts/'+aid);
+  if(d.status!=='IN_PROGRESS'){sessionStorage.removeItem('rb_term_attempt');sessionStorage.removeItem('rb_term_token');alert('This Term Exam is already closed.');state.me?render():showPublicTermExams();return}
+  const deadline=new Date(d.deadline_at).getTime(),serverOffset=new Date(d.server_now).getTime()-Date.now();
+  let timerHandle=null,autosaveHandle=null,closed=false;
+  const saveTimers=new Map(),questionMap=new Map(d.questions.map(q=>[String(q.id),q]));
+  const draftKey=qid=>'rb_term_draft_'+aid+'_'+qid;
+  const currentAnswer=q=>{const els=[...document.querySelectorAll('[data-q="'+q.id+'"]')];if(q.type==='multi')return els.filter(x=>x.checked).map(x=>x.value);if(q.type==='mcq'||q.type==='truefalse')return els.find(x=>x.checked)?.value??null;return els[0]?.value??''};
+  const setStatus=t=>{const el=document.getElementById('autosave-status');if(el)el.textContent=t};
+  const saveOne=async(qid,val)=>{try{await termApi('/term-attempts/'+aid,{method:'PUT',body:JSON.stringify({question_id:Number(qid),answer:val})});localStorage.removeItem(draftKey(qid));setStatus('Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}))}catch{setStatus('Offline draft saved locally')}};
+  const checkpoint=async()=>{for(const q of d.questions)await saveOne(String(q.id),currentAnswer(q))};
+  const finish=()=>{closed=true;clearInterval(timerHandle);clearInterval(autosaveHandle);sessionStorage.removeItem('rb_term_attempt');sessionStorage.removeItem('rb_term_token');d.questions.forEach(q=>localStorage.removeItem(draftKey(q.id)));alert('Your Term Exam has been submitted successfully.');state.me?render():showPublicTermExams()};
+  E.innerHTML='<div class="exam-watermark">'+h(d.student_name+' · '+d.class_name)+'</div><div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.student_name)+' · '+h(d.class_name)+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div class="timer" id="tm"></div></div>'+
+    (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
+    '<form id="term-exam-form" class="card exam-paper">'+d.questions.map((q,i)=>'<div class="examq"><div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+'<button class="btn" type="submit">Submit Term Exam</button></form>';
+  d.questions.forEach(q=>{let draft=null;try{draft=JSON.parse(localStorage.getItem(draftKey(q.id))||'null')}catch{};if(!draft)return;const els=[...document.querySelectorAll('[data-q="'+q.id+'"]')];if(q.type==='multi')els.forEach(el=>el.checked=Array.isArray(draft.value)&&draft.value.includes(el.value));else if(q.type==='mcq'||q.type==='truefalse')els.forEach(el=>el.checked=draft.value===el.value);else if(els[0])els[0].value=draft.value??''});
+  document.querySelectorAll('[data-q]').forEach(el=>{const ev=(el.tagName==='TEXTAREA'||el.type==='text')?'input':'change';el.addEventListener(ev,()=>{const q=questionMap.get(String(el.dataset.q));if(!q)return;const val=currentAnswer(q);try{localStorage.setItem(draftKey(q.id),JSON.stringify({value:val,at:Date.now()}))}catch{}clearTimeout(saveTimers.get(String(q.id)));saveTimers.set(String(q.id),setTimeout(()=>saveOne(String(q.id),val),1200))})});
+  document.getElementById('term-exam-form').onsubmit=async e=>{e.preventDefault();if(!confirm('Submit this Term Exam? You will not be able to change your answers afterward.'))return;await checkpoint();await termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'});finish()};
+  const tick=()=>{if(closed)return;const rem=Math.max(0,Math.ceil((deadline-(Date.now()+serverOffset))/1000));document.getElementById('tm').textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');if(rem<=0){clearInterval(timerHandle);checkpoint().finally(()=>termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'}).finally(finish))}};
+  tick();timerHandle=setInterval(tick,1000);autosaveHandle=setInterval(checkpoint,60000);
+}
+
 async function openMarking(aid){
   state.view='marking';
   const P=document.getElementById('page');
