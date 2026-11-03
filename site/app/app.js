@@ -113,10 +113,10 @@ function login(){
 }
 function navItems(){
   const r=state.me.role;
-  if(r==='student')return[['dashboard','Discover'],['ielts','IELTS'],['student-exams','My Exams'],['student-results','Results'],['certificates','Certificates']];
+  if(r==='student')return[['dashboard','Discover'],['ielts','IELTS'],['olympiads','Olympiads'],['student-exams','My Exams'],['student-results','Results'],['certificates','Certificates']];
   return [['dashboard','Overview'],['exams','Exams'],['questions','Question Bank'],['marking','Submissions']];
 }
-function navIcon(k){return ({dashboard:'⌂',ielts:'I','student-exams':'◫','student-results':'◉',certificates:'◇',exams:'▣',questions:'?','marking':'✓'}[k]||'•')}
+function navIcon(k){return ({dashboard:'⌂',ielts:'I',olympiads:'★','student-exams':'◫','student-results':'◉',certificates:'◇',exams:'▣',questions:'?','marking':'✓'}[k]||'•')}
 function render(){
   const items=navItems();
   const admin=state.me.role!=='student';
@@ -206,6 +206,13 @@ function bindIELTSAudio(){
   });
 }
 
+
+function olympiadTopics(subject){
+  if(subject==='Math')return ['Algebra','Number Theory','Geometry','Combinatorics','Logic'];
+  if(subject==='Science')return ['Biology','Chemistry','Physics','Scientific Reasoning'];
+  return ['Word & Structure','Reading','Expression','Achievers'];
+}
+
 async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){
   if(state.me.role==='student'){
     const es=await api('/student/exams');
@@ -291,6 +298,23 @@ else if(state.view==='ielts'){
     document.querySelectorAll('.ielts-start').forEach(bindExamStart);
   });
   document.querySelectorAll('.ielts-start').forEach(bindExamStart);
+}
+else if(state.view==='olympiads'){
+  const es=(await api('/student/exams')).filter(x=>x.product_family==='Olympiad');
+  const subjects=['Math','Science','English'];
+  let selectedSubject='Math',selectedGroup='Junior';
+  const renderOlympiad=()=>{
+    const rows=es.filter(x=>x.module===selectedSubject&&x.group_label===selectedGroup);
+    document.getElementById('olympiad-content').innerHTML=
+      '<div class="olympiad-toolbar"><div class="olympiad-subject-tabs">'+subjects.map(s=>'<button class="'+(s===selectedSubject?'active':'')+'" data-osub="'+s+'">'+s+'</button>').join('')+'</div>'+
+      '<div class="olympiad-group-tabs"><button class="'+(selectedGroup==='Junior'?'active':'')+'" data-ogrp="Junior">Junior</button><button class="'+(selectedGroup==='Senior'?'active':'')+'" data-ogrp="Senior">Senior</button></div></div>'+
+      '<div class="olympiad-paper-grid">'+(rows.length?rows.sort((a,b)=>a.title.localeCompare(b.title)).map((x,i)=>'<article class="olympiad-paper"><div class="olympiad-paper-no">'+String(i+1).padStart(2,'0')+'</div><div><span class="neo-kicker">'+h(selectedSubject.toUpperCase())+' · '+h(selectedGroup.toUpperCase())+'</span><h3>'+h(x.title.replace('Redbridge ','').replace(' — '+selectedGroup,''))+'</h3><p>'+h(x.duration_min)+' minutes · 25 questions · Practice mode</p><div class="olympiad-tags">'+olympiadTopics(selectedSubject).map(t=>'<span>'+h(t)+'</span>').join('')+'</div></div><button class="neo-btn olympiad-start" data-id="'+x.id+'">'+(x.attempt_status==='IN_PROGRESS'?'Resume':'Start paper')+'</button></article>').join(''):'<div class="neo-empty">No practice papers are available for this selection.</div>')+'</div>';
+    document.querySelectorAll('[data-osub]').forEach(b=>b.onclick=()=>{selectedSubject=b.dataset.osub;renderOlympiad()});
+    document.querySelectorAll('[data-ogrp]').forEach(b=>b.onclick=()=>{selectedGroup=b.dataset.ogrp;renderOlympiad()});
+    document.querySelectorAll('.olympiad-start').forEach(bindExamStart);
+  };
+  P.innerHTML='<section class="olympiad-hero"><div><span class="neo-kicker">GLOBAL OLYMPIAD PRACTICE</span><h1>Train the skills behind the world’s leading competitions.</h1><p>Original Redbridge papers informed by international Olympiad structures—without copying proprietary competition questions.</p></div><div class="olympiad-count"><strong>'+es.length+'</strong><span>practice papers</span></div></section><div id="olympiad-content"></div>';
+  renderOlympiad();
 }
 else if(state.view==='student-exams'){
   const es=await api('/student/exams');
