@@ -212,21 +212,35 @@ else if(state.view==='marking'){
   document.querySelectorAll('.open-marking').forEach(b=>b.onclick=()=>openMarking(Number(b.dataset.id)));
 }
 else if(state.view==='term-exams'){await showPublicTermExams(true);return}
-else if(state.view==='student-exams'){const es=await api('/student/exams');P.innerHTML='<div class="stack">'+(es.length?es.map(x=>'<div class="card"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · '+h(x.duration_min)+' min</div></div><button class="btn start" data-id="'+x.id+'">'+(x.attempt_status==='IN_PROGRESS'?'Resume':'Start')+'</button></div></div>').join(''):'<div class="card">No assigned exams are available.</div>')+'</div>';document.querySelectorAll('.start').forEach(b=>b.onclick=async()=>{
-  const card=b.closest('.card');
-  const title=card?.querySelector('h3')?.textContent||'this exam';
-  const isResume=b.textContent.trim().toLowerCase()==='resume';
-  const msg=isResume
-    ? 'You already have an exam in progress. The timer has continued running since you first started.\n\nContinue '+title+' now?'
-    : 'Are you ready to begin '+title+'?\n\nOnce you continue, the timer starts immediately and will keep running even if you close the page, lose power, or disconnect from the internet. Your work will be autosaved.\n\nChoose OK to continue or Cancel if you are not ready.';
-  if(!confirm(msg))return;
-  try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch{}
-  const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
-  exam(d.attempt_id);
-})}
+else if(state.view==='student-exams'){
+  const es=await api('/student/exams');
+  const cats=['All',...new Set(es.map(examCategory))];
+  P.innerHTML='<div class="neo-section-head"><div><span class="neo-kicker">EXAM LIBRARY</span><h2>Explore exams</h2></div><p>Choose a category, then start when you are ready.</p></div>'+
+    '<div class="neo-filter-row">'+cats.map((x,i)=>'<button class="neo-filter '+(i===0?'active':'')+'" data-filter="'+h(x)+'">'+h(x)+'</button>').join('')+'</div>'+
+    '<div class="neo-exam-grid">'+(es.length?es.map(examCard).join(''):'<div class="neo-empty">No exams are available yet.</div>')+'</div>';
+  document.querySelectorAll('.start').forEach(bindExamStart);
+  document.querySelectorAll('.neo-filter').forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll('.neo-filter').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.neo-exam-card').forEach(card=>card.hidden=btn.dataset.filter!=='All'&&card.dataset.category!==btn.dataset.filter);
+  });
+}
 else if(state.view==='student-results'){const rs=await api('/student/results');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Exam</th><th>Score</th><th>%</th><th>Status</th><th></th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(x.title)+'</td><td>'+(x.results_published?h(x.score+'/'+x.total):'Not released')+'</td><td>'+(x.results_published?h(x.percentage):'—')+'</td><td>'+h(x.results_published?(x.passed?'Pass':'Below pass mark'):'Pending')+'</td><td>'+(x.results_published?'<button class="btn sm review-result" data-id="'+x.id+'">Review answers</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';document.querySelectorAll('.review-result').forEach(b=>b.onclick=async()=>{const d=await api('/student/attempts/'+b.dataset.id+'/result');const fmt=v=>Array.isArray(v)?v.join(', '):(v===null||v===undefined||v===''?'—':String(v));modal('<h3>'+h(d.title)+'</h3><div class="result-summary"><b>'+h(d.score+'/'+d.total)+'</b> · '+h(d.percentage)+'% · '+h(d.passed?'Pass':'Below pass mark')+'</div><div class="review-list">'+d.questions.map(q=>'<div class="review-item '+(q.is_correct===true?'correct':q.is_correct===false?'incorrect':'')+'"><div><b>Question '+h(q.number)+'</b></div><div class="mut">'+h(q.text||'')+'</div><div>Your answer: <b>'+h(fmt(q.answer))+'</b></div><div>Correct answer: <b>'+h(fmt(q.correct))+'</b></div><div>Marks: '+h(q.marks_awarded)+'</div></div>').join('')+'</div>')})}
+else if(state.view==='certificates'){
+  const rs=(await api('/student/results')).filter(x=>x.results_published&&x.passed);
+  P.innerHTML='<div class="neo-section-head"><div><span class="neo-kicker">ACHIEVEMENTS</span><h2>Certificates</h2></div><p>Certificates become available after a successful published result.</p></div>'+
+    '<div class="neo-cert-grid">'+(rs.length?rs.map(x=>'<article class="neo-cert-card"><div class="neo-cert-mark">R</div><div><span class="neo-kicker">CERTIFICATE</span><h3>'+h(x.title)+'</h3><p>'+h(state.me.first_name+' '+state.me.last_name)+' · '+Math.round(Number(x.percentage||0))+'%</p></div><button class="neo-btn cert-download" data-title="'+h(x.title)+'" data-score="'+h(x.percentage)+'">Open certificate</button></article>').join(''):'<div class="neo-empty">Pass an exam to unlock a certificate.</div>')+'</div>';
+  document.querySelectorAll('.cert-download').forEach(btn=>btn.onclick=()=>openCertificate(btn.dataset.title,btn.dataset.score));
+}
 else if(state.view==='audit'){const rs=await api('/audit');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(new Date(x.at).toLocaleString())+'</td><td>'+h(x.user_label||'')+'</td><td>'+h(x.action)+'</td><td>'+h((x.entity||'')+' '+(x.entity_id||''))+'</td></tr>').join('')+'</tbody></table></div>'}}catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}}
 
+function openCertificate(title,score){
+  const name=state.me.first_name+' '+state.me.last_name;
+  const w=window.open('','_blank');
+  if(!w){alert('Please allow pop-ups to open the certificate.');return}
+  const html='<!doctype html><html><head><title>Certificate</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f5f2eb;color:#102636}.sheet{width:1050px;min-height:720px;margin:30px auto;background:white;padding:70px;box-sizing:border-box;border-top:12px solid #b51e33}.brand{letter-spacing:.12em;text-transform:uppercase}.title{font:700 58px Georgia,serif;margin:85px 0 18px}.name{font:italic 44px Georgia,serif;color:#b51e33;margin:26px 0}.exam{font-size:25px}.score{margin-top:30px;font-size:21px}.foot{margin-top:90px;padding-top:18px;border-top:1px solid #ddd;display:flex;justify-content:space-between}@media print{body{background:#fff}.sheet{margin:0}}</style></head><body><div class="sheet"><div class="brand">Redbridge International School · Exam Platform</div><div class="title">Certificate of Achievement</div><p>This certifies that</p><div class="name">'+h(name)+'</div><p>successfully completed</p><div class="exam">'+h(title)+'</div><div class="score">Final score: <b>'+Math.round(Number(score||0))+'%</b></div><div class="foot"><span>Redbridge Exam Platform</span><span>'+new Date().toLocaleDateString()+'</span></div></div></body></html>';
+  w.document.write(html);w.document.close();setTimeout(()=>w.print(),250);
+}
 async function openTermExamChooser(){
   try{
     if(!(state.config?.classes||[]).length)state.config=await publicApi('/config');
