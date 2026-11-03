@@ -398,21 +398,59 @@ async function termExam(aid,token){
   const d=await termApi('/term-attempts/'+aid);
   if(d.status!=='IN_PROGRESS'){sessionStorage.removeItem('rb_term_attempt');sessionStorage.removeItem('rb_term_token');alert('This Term Exam is already closed.');state.me?render():showPublicTermExams();return}
   const deadline=new Date(d.deadline_at).getTime(),serverOffset=new Date(d.server_now).getTime()-Date.now();
-  let timerHandle=null,autosaveHandle=null,closed=false;
+  let timerHandle=null,autosaveHandle=null,closed=false,submitting=false,suppressIntegrity=false,proctorStream=null,audioCtx=null,audioFrame=null,violations=0,lastViolationAt=0;
   const saveTimers=new Map(),questionMap=new Map(d.questions.map(q=>[String(q.id),q]));
   const draftKey=qid=>'rb_term_draft_'+aid+'_'+qid;
   const currentAnswer=q=>{const els=[...document.querySelectorAll('[data-q="'+q.id+'"]')];if(q.type==='multi')return els.filter(x=>x.checked).map(x=>x.value);if(q.type==='mcq'||q.type==='truefalse')return els.find(x=>x.checked)?.value??null;return els[0]?.value??''};
   const setStatus=t=>{const el=document.getElementById('autosave-status');if(el)el.textContent=t};
-  const saveOne=async(qid,val)=>{try{await termApi('/term-attempts/'+aid,{method:'PUT',body:JSON.stringify({question_id:Number(qid),answer:val})});localStorage.removeItem(draftKey(qid));setStatus('Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}))}catch{setStatus('Offline draft saved locally')}};
-  const checkpoint=async()=>{for(const q of d.questions)await saveOne(String(q.id),currentAnswer(q))};
-  const finish=()=>{closed=true;clearInterval(timerHandle);clearInterval(autosaveHandle);sessionStorage.removeItem('rb_term_attempt');sessionStorage.removeItem('rb_term_token');d.questions.forEach(q=>localStorage.removeItem(draftKey(q.id)));alert('Your Term Exam has been submitted successfully.');state.me?render():showPublicTermExams()};
-  E.innerHTML='<div class="exam-watermark">'+h(d.student_name+' · '+d.class_name)+'</div><div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.student_name)+' · '+h(d.class_name)+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div class="timer" id="tm"></div></div>'+
+  const saveOne=async(qid,val)=>{try{await termApi('/term-attempts/'+aid,{method:'PUT',body:JSON.stringify({question_id:Number(qid),answer:val})});localStorage.removeItem(draftKey(qid));setStatus('Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}))}catch{setStatus((navigator.onLine?'Could not sync yet':'Offline')+' — draft saved locally')}};
+  const checkpoint=async()=>{if(closed)return;for(const q of d.questions)await saveOne(String(q.id),currentAnswer(q))};
+  const cleanup=()=>{closed=true;clearInterval(timerHandle);clearInterval(autosaveHandle);saveTimers.forEach(t=>clearTimeout(t));saveTimers.clear();document.removeEventListener('visibilitychange',onVisibility);window.removeEventListener('blur',onBlur);document.removeEventListener('fullscreenchange',onFullscreen);document.removeEventListener('contextmenu',blockContext);document.removeEventListener('copy',blockClipboard);document.removeEventListener('cut',blockClipboard);document.removeEventListener('paste',blockClipboard);document.removeEventListener('keydown',onKey);if(audioFrame)cancelAnimationFrame(audioFrame);if(audioCtx){try{audioCtx.close()}catch{}audioCtx=null}if(proctorStream){proctorStream.getTracks().forEach(t=>t.stop());proctorStream=null}document.getElementById('proctor-dock')?.remove()};
+  const finish=()=>{cleanup();sessionStorage.removeItem('rb_term_attempt');sessionStorage.removeItem('rb_term_token');d.questions.forEach(q=>localStorage.removeItem(draftKey(q.id)));alert('Your Term Exam has been submitted successfully.');state.me?render():showPublicTermExams()};
+  const warn=msg=>{const w=document.getElementById('integrity-warning');if(!w)return;w.textContent=msg;w.classList.add('show');setTimeout(()=>w?.classList.remove('show'),3500)};
+  const report=(kind,label)=>{if(closed||submitting||suppressIntegrity)return;violations++;if(label)warn(label+' Warning '+violations+'.')};
+  const startProctor=async()=>{
+    const status=document.getElementById('term-proctor-status');
+    if(!window.isSecureContext){if(status){status.textContent='Camera and microphone require HTTPS.';status.className='error'}return false}
+    if(!navigator.mediaDevices?.getUserMedia){if(status){status.textContent='This browser does not support camera/microphone access.';status.className='error'}return false}
+    if(status){status.textContent='Requesting permission from your browser…';status.className='mut'}
+    try{
+      proctorStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});
+      let dock=document.getElementById('proctor-dock');
+      if(!dock){dock=document.createElement('div');dock.id='proctor-dock';dock.className='proctor-dock';dock.innerHTML='<video id="proctor-video" autoplay muted playsinline></video><div class="proctor-row"><span class="proctor-live"><i></i> Proctoring active</span><span>Cam + Mic</span></div><div class="proctor-meter"><i id="proctor-meter-bar"></i></div>';document.body.appendChild(dock)}
+      document.getElementById('proctor-video').srcObject=proctorStream;
+      try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();const source=audioCtx.createMediaStreamSource(proctorStream),an=audioCtx.createAnalyser();an.fftSize=256;source.connect(an);const data=new Uint8Array(an.frequencyBinCount);const pulse=()=>{if(closed||!audioCtx)return;an.getByteFrequencyData(data);let total=0;for(const v of data)total+=v;const bar=document.getElementById('proctor-meter-bar');if(bar)bar.style.width=Math.max(6,Math.min(100,(total/data.length)*1.8))+'%';audioFrame=requestAnimationFrame(pulse)};pulse()}catch{}
+      return true;
+    }catch(e){
+      let msg='Camera and microphone could not be started.';
+      if(e?.name==='NotAllowedError')msg='Camera or microphone permission is blocked. Allow Camera and Microphone in the browser site permissions, then try again.';
+      else if(e?.name==='NotFoundError')msg='No usable camera or microphone was found.';
+      else if(e?.name==='NotReadableError')msg='The camera or microphone is busy in another application.';
+      if(status){status.textContent=msg;status.className='error'}return false;
+    }
+  };
+  const ensureFullscreen=async()=>{if(document.fullscreenElement)return true;try{await document.documentElement.requestFullscreen();return true}catch{return false}};
+  const onVisibility=()=>{if(document.hidden&&!submitting&&!suppressIntegrity){checkpoint();report('visibility_hidden','You left the exam tab.')}};
+  const onBlur=()=>{if(!submitting&&!suppressIntegrity){checkpoint();report('window_blur','The exam window lost focus.')}};
+  const onFullscreen=()=>{if(!document.fullscreenElement&&!submitting&&!suppressIntegrity)report('fullscreen_exit','Fullscreen mode was exited.')};
+  const blockContext=e=>{e.preventDefault();warn('Right-click is disabled during the exam.')};
+  const blockClipboard=e=>{e.preventDefault();report('clipboard_attempt','Copy, cut and paste are disabled.')};
+  const onKey=e=>{const k=e.key.toLowerCase();if(e.key==='PrintScreen'){e.preventDefault();report('screenshot_attempt','Screenshot-key attempt detected.');return}if((e.ctrlKey||e.metaKey)&&['c','x','v','p','s','u'].includes(k)){e.preventDefault();report(k==='p'?'print_attempt':'keyboard_shortcut_attempt',k==='p'?'Printing is not allowed.':'This shortcut is disabled.');return}if(e.key==='F12'){e.preventDefault();report('developer_tools_attempt','Developer tools are disabled during the exam.')}};
+
+  E.innerHTML='<div class="exam-watermark">'+h(d.student_name+' · '+d.class_name)+'</div><div id="integrity-warning" class="integrity-warning"></div>'+
+    '<div class="proctor-consent"><h3>Secure proctoring</h3><p class="mut">Camera, microphone and fullscreen are required for every Term Exam.</p><div class="proctor-checks"><span>● Camera</span><span>● Microphone</span><span>● Fullscreen</span></div><div id="term-proctor-status" class="mut">Permission has not been requested yet.</div><button id="term-proctor-enable" class="btn alt sm" type="button">Enable camera & microphone</button></div>'+
+    '<div id="term-proctor-lock" class="proctor-lock"><b>Proctoring required</b><span>Enable camera and microphone to unlock the exam.</span></div>'+
+    '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.student_name)+' · '+h(d.class_name)+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div class="timer" id="tm"></div></div>'+
     (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
     '<form id="term-exam-form" class="card exam-paper">'+d.questions.map((q,i)=>'<div class="examq">'+ieltsQuestionResource(q)+'<div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+'<button class="btn" type="submit">Submit Term Exam</button></form>';
+
   d.questions.forEach(q=>{let draft=null;try{draft=JSON.parse(localStorage.getItem(draftKey(q.id))||'null')}catch{};if(!draft)return;const els=[...document.querySelectorAll('[data-q="'+q.id+'"]')];if(q.type==='multi')els.forEach(el=>el.checked=Array.isArray(draft.value)&&draft.value.includes(el.value));else if(q.type==='mcq'||q.type==='truefalse')els.forEach(el=>el.checked=draft.value===el.value);else if(els[0])els[0].value=draft.value??''});
+  const form=document.getElementById('term-exam-form');[...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=true);
+  document.getElementById('term-proctor-enable').onclick=async()=>{const ok=await startProctor();if(!ok)return;const fs=await ensureFullscreen();if(!fs){const s=document.getElementById('term-proctor-status');if(s){s.textContent='Camera and microphone are enabled. Please allow fullscreen to begin.';s.className='error'}return}document.getElementById('term-proctor-lock')?.remove();[...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=false);const s=document.getElementById('term-proctor-status');if(s){s.textContent='Proctoring active. You may begin the exam.';s.className='success'}};
+  document.addEventListener('visibilitychange',onVisibility);window.addEventListener('blur',onBlur);document.addEventListener('fullscreenchange',onFullscreen);document.addEventListener('contextmenu',blockContext);document.addEventListener('copy',blockClipboard);document.addEventListener('cut',blockClipboard);document.addEventListener('paste',blockClipboard);document.addEventListener('keydown',onKey);
   document.querySelectorAll('[data-q]').forEach(el=>{const ev=(el.tagName==='TEXTAREA'||el.type==='text')?'input':'change';el.addEventListener(ev,()=>{const q=questionMap.get(String(el.dataset.q));if(!q)return;const val=currentAnswer(q);try{localStorage.setItem(draftKey(q.id),JSON.stringify({value:val,at:Date.now()}))}catch{}clearTimeout(saveTimers.get(String(q.id)));saveTimers.set(String(q.id),setTimeout(()=>saveOne(String(q.id),val),1200))})});
-  document.getElementById('term-exam-form').onsubmit=async e=>{e.preventDefault();if(!confirm('Submit this Term Exam? You will not be able to change your answers afterward.'))return;await checkpoint();await termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'});finish()};
-  const tick=()=>{if(closed)return;const rem=Math.max(0,Math.ceil((deadline-(Date.now()+serverOffset))/1000));document.getElementById('tm').textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');if(rem<=0){clearInterval(timerHandle);checkpoint().finally(()=>termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'}).finally(finish))}};
+  form.onsubmit=async e=>{e.preventDefault();if(submitting)return;suppressIntegrity=true;const ok=confirm('Submit this Term Exam? You will not be able to change your answers afterward.');if(!ok){setTimeout(()=>suppressIntegrity=false,500);return}submitting=true;clearInterval(autosaveHandle);saveTimers.forEach(t=>clearTimeout(t));saveTimers.clear();const btn=e.currentTarget.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Submitting…'}try{await checkpoint();await termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'});finish()}catch{try{const check=await termApi('/term-attempts/'+aid);if(check.status!=='IN_PROGRESS'){finish();return}}catch{}submitting=false;suppressIntegrity=false;if(btn){btn.disabled=false;btn.textContent='Submit Term Exam'}autosaveHandle=setInterval(checkpoint,60000);alert('The exam could not be submitted yet. Your answers are preserved. Please try again.')}};
+  const tick=()=>{if(closed)return;const rem=Math.max(0,Math.ceil((deadline-(Date.now()+serverOffset))/1000));document.getElementById('tm').textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');if(rem<=0){clearInterval(timerHandle);suppressIntegrity=true;checkpoint().finally(()=>termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'}).finally(finish))}};
   tick();timerHandle=setInterval(tick,1000);autosaveHandle=setInterval(checkpoint,60000);
 }
 
@@ -688,6 +726,7 @@ async function exam(aid){
       '<div class="exam-watermark">'+h(studentLabel)+'</div>'+
       '<div id="integrity-warning" class="integrity-warning"></div>'+
       (proctored?'<div class="proctor-consent"><h3>Secure proctoring</h3><p class="mut">This exam requires camera, microphone and fullscreen monitoring. Click the button below so your browser can ask for permission.</p><div class="proctor-checks"><span>● Camera</span><span>● Microphone</span><span>● Fullscreen</span></div><div id="proctor-consent-status" class="mut">Permission has not been requested yet.</div><button id="proctor-retry" class="btn alt sm" type="button">Enable camera & microphone</button></div>':'')+
+      (proctored?'<div id="proctor-lock" class="proctor-lock"><b>Proctoring required</b><span>Enable camera and microphone to unlock the exam.</span></div>':'')+
       '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">'+(proctored?'Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3':'Practice mode · proctoring off')+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
       (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
       '<form id="xaf" class="card exam-paper">'+
@@ -696,9 +735,21 @@ async function exam(aid){
 
     document.getElementById('fsbtn').onclick=ensureFullscreen;
     if(proctored){
+      const form=document.getElementById('xaf');
+      [...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=true);
       document.getElementById('proctor-retry').onclick=async()=>{
         const ok=await startProctor();
-        if(ok)await ensureFullscreen();
+        if(!ok)return;
+        const fs=await ensureFullscreen();
+        if(!fs){
+          const status=document.getElementById('proctor-consent-status');
+          if(status){status.textContent='Camera and microphone are enabled. Please allow fullscreen to begin the exam.';status.className='error'}
+          return;
+        }
+        document.getElementById('proctor-lock')?.remove();
+        [...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=false);
+        const status=document.getElementById('proctor-consent-status');
+        if(status){status.textContent='Proctoring active. You may begin the exam.';status.className='success'}
       };
     }
     restoreEmergencyDrafts();
