@@ -483,6 +483,7 @@ async function exam(aid){
   const E=document.getElementById('exam');
   const d=await api('/attempts/'+aid);
   if(d.status!=='IN_PROGRESS'){state.view='student-results';render();return}
+  const proctored=!!d.exam.proctoring_required;
 
   const deadline=new Date(d.deadline_at).getTime();
   const serverOffset=new Date(d.server_now).getTime()-Date.now();
@@ -595,7 +596,16 @@ async function exam(aid){
 
   const startProctor=async()=>{
     const status=document.getElementById('proctor-consent-status');
-    if(status)status.textContent='Requesting camera and microphone…';
+    if(!proctored)return true;
+    if(!window.isSecureContext){
+      if(status){status.textContent='Camera and microphone require a secure HTTPS connection.';status.className='error'}
+      return false;
+    }
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      if(status){status.textContent='This browser does not provide camera/microphone access for this page.';status.className='error'}
+      return false;
+    }
+    if(status){status.textContent='Requesting permission from your browser…';status.className='mut'}
     try{
       proctorStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});
       let dock=document.getElementById('proctor-dock');
@@ -613,8 +623,12 @@ async function exam(aid){
       }catch{}
       return true;
     }catch(e){
-      if(status){status.textContent='Camera and microphone access is required for this secure exam.';status.className='error'}
-      report('proctor_permission_denied','Camera or microphone permission was denied.');
+      let msg='Camera and microphone could not be started.';
+      if(e&&e.name==='NotAllowedError')msg='Camera or microphone permission is blocked. Use the browser site-permissions control (padlock icon) to allow Camera and Microphone, then click Enable again.';
+      else if(e&&e.name==='NotFoundError')msg='No usable camera or microphone was found on this device.';
+      else if(e&&e.name==='NotReadableError')msg='The camera or microphone is busy or unavailable. Close other apps using it and try again.';
+      else if(e&&e.name==='SecurityError')msg='The browser blocked camera/microphone access because of a security policy.';
+      if(status){status.textContent=msg;status.className='error'}
       return false;
     }
   };
@@ -640,14 +654,16 @@ async function exam(aid){
     if(e.key==='F12'){e.preventDefault();report('developer_tools_attempt','Developer tools are disabled during the exam.')}
   };
 
-  document.addEventListener('visibilitychange',onVisibility);
-  window.addEventListener('blur',onBlur);
-  document.addEventListener('fullscreenchange',onFullscreen);
-  document.addEventListener('contextmenu',blockContext);
-  document.addEventListener('copy',blockClipboard);
-  document.addEventListener('cut',blockClipboard);
-  document.addEventListener('paste',blockClipboard);
-  document.addEventListener('keydown',onKey);
+  if(proctored){
+    document.addEventListener('visibilitychange',onVisibility);
+    window.addEventListener('blur',onBlur);
+    document.addEventListener('fullscreenchange',onFullscreen);
+    document.addEventListener('contextmenu',blockContext);
+    document.addEventListener('copy',blockClipboard);
+    document.addEventListener('cut',blockClipboard);
+    document.addEventListener('paste',blockClipboard);
+    document.addEventListener('keydown',onKey);
+  }
 
   const ensureFullscreen=async()=>{
     if(document.fullscreenElement)return true;
@@ -671,15 +687,20 @@ async function exam(aid){
     E.innerHTML=
       '<div class="exam-watermark">'+h(studentLabel)+'</div>'+
       '<div id="integrity-warning" class="integrity-warning"></div>'+
-      '<div class="proctor-consent"><h3>Secure proctoring</h3><p class="mut">Camera, microphone and fullscreen access are required. The platform records integrity incidents when the exam loses focus or a required device disconnects.</p><div class="proctor-checks"><span>● Camera</span><span>● Microphone</span><span>● Fullscreen</span></div><div id="proctor-consent-status" class="mut">Preparing proctoring…</div><button id="proctor-retry" class="btn alt sm" type="button">Reconnect camera & mic</button></div>'+
-      '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
+      (proctored?'<div class="proctor-consent"><h3>Secure proctoring</h3><p class="mut">This exam requires camera, microphone and fullscreen monitoring. Click the button below so your browser can ask for permission.</p><div class="proctor-checks"><span>● Camera</span><span>● Microphone</span><span>● Fullscreen</span></div><div id="proctor-consent-status" class="mut">Permission has not been requested yet.</div><button id="proctor-retry" class="btn alt sm" type="button">Enable camera & microphone</button></div>':'')+
+      '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">'+(proctored?'Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3':'Practice mode · proctoring off')+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
       (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
       '<form id="xaf" class="card exam-paper">'+
       d.questions.map((q,i)=>'<div class="examq"><div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+
       '<button class="btn" type="submit">Submit exam</button></form>';
 
     document.getElementById('fsbtn').onclick=ensureFullscreen;
-    document.getElementById('proctor-retry').onclick=startProctor;
+    if(proctored){
+      document.getElementById('proctor-retry').onclick=async()=>{
+        const ok=await startProctor();
+        if(ok)await ensureFullscreen();
+      };
+    }
     restoreEmergencyDrafts();
     bindIELTSAudio();
 
@@ -738,11 +759,10 @@ async function exam(aid){
   };
 
   draw();
-  await startProctor();
   tick();
   timerHandle=setInterval(tick,1000);
   autosaveHandle=setInterval(checkpoint,60000);
-  if(!document.fullscreenElement)warn('Fullscreen is required. Click Fullscreen before continuing.');
+  if(proctored&&!document.fullscreenElement)warn('This is a proctored exam. Enable camera and microphone, then enter fullscreen.');
 }
 function cleanExamOption(v){let s=String(v??'').trim();s=s.replace(/\s+Book\s+\d+\s+Part\s+[A-Z].*$/i,'').trim();s=s.replace(/\s+(Elementary|Pre-Intermediate|Intermediate|Upper-Intermediate|Advanced)\s+Test\s*[-:]?\s*\d+.*$/i,'').trim();return s}
 function answerHtml(q){if(q.type==='mcq'||q.type==='truefalse')return (q.options||[]).map(o=>'<label class="choice"><input type="radio" data-q="'+q.id+'" name="q'+q.id+'" value="'+h(o.id)+'" '+(q.answer===o.id?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');if(q.type==='multi')return (q.options||[]).map(o=>'<label class="choice"><input type="checkbox" data-q="'+q.id+'" value="'+h(o.id)+'" '+(Array.isArray(q.answer)&&q.answer.includes(o.id)?'checked':'')+'> '+h(cleanExamOption(o.text))+'</label>').join('');if(q.type==='written'){const rows=Math.max(2,Math.min(18,Number(q.answer_lines||3)));return '<label class="field written-answer-field"><textarea class="written-answer" data-q="'+q.id+'" rows="'+rows+'" autocomplete="off" spellcheck="true" placeholder="Write your answer here...">'+h(q.answer??'')+'</textarea></label>';}return '<label class="field"><input data-q="'+q.id+'" value="'+h(q.answer??'')+'" autocomplete="off"></label>'}
