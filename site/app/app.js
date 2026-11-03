@@ -486,7 +486,7 @@ async function exam(aid){
 
   const deadline=new Date(d.deadline_at).getTime();
   const serverOffset=new Date(d.server_now).getTime()-Date.now();
-  let timerHandle=null,autosaveHandle=null,closed=false,lastViolationAt=0,violations=0,proctorStream=null,audioCtx=null,audioFrame=null;
+  let timerHandle=null,autosaveHandle=null,closed=false,lastViolationAt=0,violations=0,proctorStream=null,audioCtx=null,audioFrame=null,submitting=false,suppressIntegrity=false;
   const saveTimers=new Map();
   const questionMap=new Map(d.questions.map(q=>[String(q.id),q]));
   const studentLabel=(state.me.first_name+' '+state.me.last_name+' · '+state.me.email+' · Attempt '+aid);
@@ -543,7 +543,7 @@ async function exam(aid){
       localStorage.removeItem(draftKey(qid));
       setSaveStatus('Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),'saved');
     }catch{
-      setSaveStatus('Offline draft saved locally','offline');
+      setSaveStatus((navigator.onLine?'Could not sync yet':'Offline')+' — draft saved locally','offline');
     }
   };
 
@@ -574,7 +574,7 @@ async function exam(aid){
   };
 
   const report=async(kind,label)=>{
-    if(closed)return;
+    if(closed||submitting||suppressIntegrity)return;
     const now=Date.now();
     if(now-lastViolationAt<700&&['window_blur','visibility_hidden','fullscreen_exit'].includes(kind))return;
     lastViolationAt=now;
@@ -620,13 +620,13 @@ async function exam(aid){
   };
 
   const onVisibility=()=>{
-    if(document.hidden){
+    if(document.hidden&&!submitting&&!suppressIntegrity){
       checkpoint();
       report('visibility_hidden','You left the exam tab.');
     }
   };
-  const onBlur=()=>{checkpoint();report('window_blur','The exam window lost focus.')};
-  const onFullscreen=()=>{if(!document.fullscreenElement)report('fullscreen_exit','Fullscreen mode was exited.')};
+  const onBlur=()=>{if(!submitting&&!suppressIntegrity){checkpoint();report('window_blur','The exam window lost focus.')}};
+  const onFullscreen=()=>{if(!document.fullscreenElement&&!submitting&&!suppressIntegrity)report('fullscreen_exit','Fullscreen mode was exited.')};
   const blockContext=e=>{e.preventDefault();warn('Right-click is disabled during the exam.')};
   const blockClipboard=e=>{e.preventDefault();report('clipboard_attempt','Copy, cut and paste are disabled.')};
   const onKey=e=>{
@@ -694,10 +694,33 @@ async function exam(aid){
 
     document.getElementById('xaf').onsubmit=async e=>{
       e.preventDefault();
-      if(!confirm('Submit this exam? You will not be able to change your answers afterward.'))return;
-      await checkpoint();
-      await api('/attempts/'+aid+'/submit',{method:'POST',body:'{}'});
-      finishToResults();
+      if(submitting)return;
+      suppressIntegrity=true;
+      const ok=confirm('Submit this exam? You will not be able to change your answers afterward.');
+      if(!ok){setTimeout(()=>{suppressIntegrity=false},500);return}
+      submitting=true;
+      clearInterval(autosaveHandle);autosaveHandle=null;
+      saveTimers.forEach(t=>clearTimeout(t));saveTimers.clear();
+      const submitBtn=e.currentTarget.querySelector('button[type="submit"]');
+      if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Submitting…'}
+      setSaveStatus('Saving final answers…','saving');
+      try{
+        await checkpoint();
+        setSaveStatus('Submitting exam…','saving');
+        await api('/attempts/'+aid+'/submit',{method:'POST',body:'{}'});
+        finishToResults();
+      }catch(err){
+        try{
+          const check=await api('/attempts/'+aid);
+          if(check.status!=='IN_PROGRESS'){finishToResults();return}
+        }catch{}
+        submitting=false;
+        suppressIntegrity=false;
+        if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Submit exam'}
+        autosaveHandle=setInterval(checkpoint,60000);
+        setSaveStatus('Submission failed — your answers remain saved locally','offline');
+        alert('The exam could not be submitted yet. Your answers are preserved. Please try Submit again.');
+      }
     };
   };
 
