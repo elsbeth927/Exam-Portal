@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Verify Certificate · Redbridge Exam Platform</title>
+  <meta name="theme-color" content="#102431">
+  <link rel="stylesheet" href="/app/app.css?v=20261103-cert1">
+</head>
+<body>
+  <div class="verify-page">
+    <header class="register-topbar">
+      <button class="neo-brand" id="home" type="button">
+        <img src="/app/redbridge-logo.svg" alt="Redbridge International School">
+        <span>Certificate Verification</span>
+      </button>
+    </header>
+    <main class="verify-shell">
+      <section class="verify-card" id="verify-card">
+        <span class="neo-kicker">REDBRIDGE CERTIFICATE REGISTRY</span>
+        <h1>Verifying certificate…</h1>
+        <p class="mut">Please wait while we confirm this reference.</p>
+      </section>
+    </main>
+  </div>
+<script>
+const qs=new URLSearchParams(location.search),ref=qs.get('ref')||'',token=qs.get('token')||'';
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const api=async path=>{const r=await fetch('/api'+path,{credentials:'same-origin'});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Certificate not found.');return d};
+document.getElementById('home').onclick=()=>location.href='/app/';
+(async()=>{
+ const card=document.getElementById('verify-card');
+ try{
+   if(!ref||!token)throw new Error('The verification link is incomplete.');
+   const d=await api('/certificates/verify/'+encodeURIComponent(ref)+'?token='+encodeURIComponent(token));
+   const issued=new Date(d.issued_at).toLocaleDateString('en-GB',{timeZone:'Asia/Tashkent',day:'2-digit',month:'long',year:'numeric'});
+   card.innerHTML='<div class="verify-status '+(d.valid?'valid':'invalid')+'">'+(d.valid?'✓ Valid certificate':'✕ Certificate revoked')+'</div>'+
+   '<span class="neo-kicker">REDBRIDGE CERTIFICATE REGISTRY</span><h1>'+esc(d.exam_title)+'</h1>'+
+   '<div class="verify-grid"><div><small>Student</small><b>'+esc(d.student_name)+'</b></div><div><small>Certificate</small><b>'+esc(d.certificate_type)+'</b></div><div><small>Score</small><b>'+Math.round(Number(d.percentage||0))+'%</b></div><div><small>Date issued</small><b>'+esc(issued)+'</b></div><div class="wide"><small>Reference number</small><b>'+esc(d.reference_no)+'</b></div></div>'+
+   '<p class="verify-foot">This record is issued by Redbridge International School through the Redbridge Exam Platform.</p>';
+ }catch(e){
+   card.innerHTML='<div class="verify-status invalid">✕ Unable to verify</div><span class="neo-kicker">REDBRIDGE CERTIFICATE REGISTRY</span><h1>Certificate not verified</h1><p class="mut">'+esc(e.message)+'</p>';
+ }
+})();
+</script>
+</body>
+</html>
