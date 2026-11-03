@@ -227,3 +227,6 @@ h1,h2,h3,p{margin-top:0}
 .olympiad-paper:hover{transform:translateY(-2px);box-shadow:var(--soft)}.olympiad-paper-no{width:58px;height:58px;border-radius:16px;background:#f2ecee;color:var(--red);display:grid;place-items:center;font:700 1.5rem Georgia,serif}
 .olympiad-paper h3{margin:5px 0 7px}.olympiad-paper p{margin:0;color:var(--mut)}.olympiad-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}.olympiad-tags span{font-size:.72rem;padding:6px 8px;border-radius:999px;background:#f3f6f6;color:#58707d;font-weight:750}
 @media(max-width:760px){.olympiad-hero{grid-template-columns:1fr;padding:26px 22px}.olympiad-hero h1{font-size:2.2rem}.olympiad-count{max-width:180px}.olympiad-toolbar{align-items:flex-start;flex-direction:column}.olympiad-paper{grid-template-columns:auto 1fr}.olympiad-paper .neo-btn{grid-column:1/-1;width:100%}}
+
+.proctor-lock{margin:14px 0 18px;padding:16px 18px;border-radius:14px;border:1px solid #e2c36a;background:#fff8df;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.proctor-lock b{color:#7a5a00}.proctor-lock span{color:#6e6250}
