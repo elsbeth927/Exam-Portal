@@ -161,6 +161,43 @@ function render(){
   document.getElementById('logout').onclick=async()=>{try{await api('/logout',{method:'POST',body:'{}'})}finally{sessionStorage.removeItem('rb_session');state={me:null,csrf:null,view:'dashboard',data:{},token:'',setupRequired:false,config:state.config||{classes:[]}};login()}};
   loadView();
 }
+
+function examCategory(x){
+  const t=((x&&x.title||'')+' '+(x&&x.subject||'')+' '+(x&&x.exam_type||'')).toLowerCase();
+  if(t.includes('ielts'))return 'IELTS';
+  if(t.includes('math')&&t.includes('olympiad'))return 'Math Olympiad';
+  if(t.includes('english')&&t.includes('olympiad'))return 'English Olympiad';
+  if(t.includes('olympiad'))return 'Olympiad';
+  if(t.includes('placement'))return 'Placement';
+  if(t.includes('term'))return 'Term Exam';
+  return (x&&x.subject)||'Exam';
+}
+function examGroup(x){
+  const t=((x&&x.title)||'').toLowerCase();
+  if(t.includes('junior'))return 'Junior';
+  if(t.includes('senior'))return 'Senior';
+  if(t.includes('primary'))return 'Primary';
+  if(t.includes('advanced'))return 'Advanced';
+  if(t.includes('elementary'))return 'Foundation';
+  return 'Open level';
+}
+function examCard(x){
+  const cat=examCategory(x);
+  const resume=x.attempt_status==='IN_PROGRESS';
+  return '<article class="neo-exam-card" data-category="'+h(cat)+'"><div class="neo-exam-accent"></div><div class="neo-card-top"><span class="neo-chip">'+h(cat)+'</span><span class="neo-muted">'+h(examGroup(x))+'</span></div><h3>'+h(x.title)+'</h3><div class="neo-exam-meta"><span>◷ '+h(x.duration_min)+' min</span><span>◎ '+h(x.subject||cat)+'</span></div><div class="neo-exam-foot"><span>'+(resume?'Attempt in progress':'Ready when you are')+'</span><button class="neo-btn start" data-id="'+x.id+'">'+(resume?'Resume':'Start exam')+'</button></div></article>';
+}
+function bindExamStart(b){
+  b.onclick=async function(){
+    const card=b.closest('.neo-exam-card')||b.closest('.card');
+    const title=card&&card.querySelector('h3')?card.querySelector('h3').textContent:'this exam';
+    const isResume=b.textContent.trim().toLowerCase().includes('resume');
+    const msg=isResume?'You already have this exam in progress. The timer has continued running. Resume now?':'Before you begin, make sure you are ready. The timer starts immediately and secure exams may require camera, microphone and fullscreen access. Continue?';
+    if(!confirm(msg))return;
+    const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
+    exam(d.attempt_id);
+  };
+}
+
 async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){const d=await api('/dashboard');let quote='';if(state.me.role==='student'){const quotes=[{src:'/app/motivation/motivation-1.webp?v=20261006-originalhq3',alt:'Small steps every day lead to big results.'},{src:'/app/motivation/motivation-2.webp?v=20261006-originalhq3',alt:"Believe you can, and you're halfway there."},{src:'/app/motivation/motivation-3.webp?v=20261006-originalhq3',alt:'Success begins with the courage to try.'},{src:'/app/motivation/motivation-4.webp?v=20261006-originalhq3',alt:'Dream big, work hard, stay focused.'},{src:'/app/motivation/motivation-5.webp?v=20261006-originalhq3',alt:'Mistakes are proof that you are learning.'}];let qi=Number(localStorage.getItem('rb_quote_image_index')||'-1');qi=(qi+1)%quotes.length;localStorage.setItem('rb_quote_image_index',String(qi));const q=quotes[qi];quote='<div class="card motivation-card"><img src="'+q.src+'" alt="'+h(q.alt)+'"></div>';}P.innerHTML='<div class="grid">'+Object.entries(d).map(([k,v])=>'<div class="card metric"><div class="mut">'+h(k.replaceAll('_',' '))+'</div><b>'+h(v)+'</b></div>').join('')+'</div>'+quote}
 else if(state.view==='classes'){const [cs,ss]=await Promise.all([api('/classes'),api('/subjects')]);P.innerHTML='<div class="grid"><div class="card"><h3 class="section-title">Classes</h3><form id="cf" class="row"><input name="name" placeholder="10A" required><input name="grade" type="number" min="1" max="11" placeholder="Grade" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+cs.map(x=>'<tr><td>'+h(x.name)+'</td><td>Grade '+h(x.grade)+'</td></tr>').join('')+'</tbody></table></div><div class="card"><h3 class="section-title">Subjects</h3><form id="sf" class="row"><input name="name" placeholder="Mathematics" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+ss.map(x=>'<tr><td>'+h(x.name)+'</td></tr>').join('')+'</tbody></table></div></div>';document.getElementById('cf').onsubmit=e=>submitForm(e,'/classes');document.getElementById('sf').onsubmit=e=>submitForm(e,'/subjects')}
 else if(state.view==='users'){const rows=await api('/users');P.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h3 class="section-title">School users</h3><button id="nu" class="btn sm">New user</button></div><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+h(x.first_name+' '+x.last_name)+'</td><td>'+h(x.email)+'</td><td>'+h(x.role)+'</td><td>'+h(x.status)+'</td></tr>').join('')+'</tbody></table></div>';document.getElementById('nu').onclick=()=>modal('<h3>New user</h3><form id="uf" class="stack"><label class="field">First name<input name="first_name" required></label><label class="field">Last name<input name="last_name" required></label><label class="field">Email<input name="email" type="email" required></label><label class="field">Role<select name="role"><option>student</option><option>teacher</option><option>academic_admin</option></select></label><label class="field">Temporary password<input name="password" type="password" required></label><button class="btn">Create</button></form>',()=>document.getElementById('uf').onsubmit=e=>submitForm(e,'/users',true))}
