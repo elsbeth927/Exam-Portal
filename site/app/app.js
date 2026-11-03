@@ -261,23 +261,19 @@ function openCertificate(title,score){
 }
 async function openTermExamChooser(){
   try{
-    if(!(state.config?.classes||[]).length)state.config=await publicApi('/config');
     const rows=await publicApi('/term-exams');
-    const classes=(state.config?.classes||[]);
-    const subjects=[...new Set(rows.map(x=>x.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     if(!rows.length){alert('No Term Exams are open at the moment.');return}
+    const subjects=[...new Set(rows.map(x=>x.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const groups=[...new Set(rows.map(examGroup))].sort((a,b)=>a.localeCompare(b));
     modal(
-      '<h3>Term Exams</h3><p class="mut">Choose your class and subject. No account or registration is required.</p>'+
+      '<div class="neo-auth-head"><span class="neo-kicker">TERM EXAMS</span><h3>Find your exam</h3><p>No account is required. Choose the subject and group.</p></div>'+
       '<form id="term-filter-form" class="stack">'+
-      '<label class="field">Class<select name="class_id" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+x.id+'" data-grade="'+x.grade+'" data-name="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>'+
       '<label class="field">Subject<select name="subject" required><option value="">Select subject</option>'+subjects.map(s=>'<option value="'+h(s)+'">'+h(s)+'</option>').join('')+'</select></label>'+
-      '<button class="btn">Show available Term Exams</button><div id="term-filter-error" class="error"></div></form>',
+      '<label class="field">Group<select name="group" required><option value="">Select group</option>'+groups.map(g=>'<option value="'+h(g)+'">'+h(g)+'</option>').join('')+'</select></label>'+
+      '<button class="neo-btn">Show available Term Exams</button><div id="term-filter-error" class="error"></div></form>',
       ()=>document.getElementById('term-filter-form').onsubmit=e=>{
-        e.preventDefault();
-        const fd=new FormData(e.target),sel=e.target.querySelector('[name="class_id"]'),opt=sel.options[sel.selectedIndex];
-        const className=opt?.dataset?.name||opt?.text||'',grade=Number(opt?.dataset?.grade||0),subject=String(fd.get('subject')||'');
-        closeModal();
-        showPublicTermExams(false,{className,grade,subject});
+        e.preventDefault();const fd=new FormData(e.target);
+        closeModal();showPublicTermExams(false,{subject:String(fd.get('subject')||''),group:String(fd.get('group')||'')});
       }
     );
   }catch(e){alert(e.message||'Could not load Term Exams.')}
@@ -298,18 +294,18 @@ async function showPublicTermExams(inShell=false,filters=null){
     if(!(state.config?.classes||[]).length)state.config=await api('/config');
     let rows=await publicApi('/term-exams');
     if(filters){
-      rows=rows.filter(x=>(!filters.grade||Number(x.grade)===Number(filters.grade))&&(!filters.subject||x.subject===filters.subject));
+      rows=rows.filter(x=>(!filters.subject||x.subject===filters.subject)&&(!filters.group||examGroup(x)===filters.group));
     }
     const resumeId=sessionStorage.getItem('rb_term_attempt');
     const resumeToken=sessionStorage.getItem('rb_term_token');
     const resume=resumeId&&resumeToken?'<div class="card term-resume-card"><div><b>Unfinished Term Exam</b><div class="mut">Your timer has continued running. Resume only if this is your current exam.</div></div><button class="btn" id="resume-term-exam">Resume</button></div>':'';
-    const filterHead=filters?'<div class="card term-filter-summary"><b>'+h(filters.className)+' · '+h(filters.subject)+'</b><div class="mut">Available Term Exams for your selection</div><button id="change-term-filter" class="btn alt sm" type="button">Change class / subject</button></div>':'';
+    const filterHead=filters?'<div class="card term-filter-summary"><b>'+h(filters.group)+' · '+h(filters.subject)+'</b><div class="mut">Available Term Exams for your selection</div><button id="change-term-filter" class="btn alt sm" type="button">Change class / subject</button></div>':'';
     mount.innerHTML=resume+filterHead+'<div class="stack">'+(rows.length?rows.map(x=>'<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · Grade '+h(x.grade)+' · '+h(x.duration_min)+' min</div></div><button class="btn public-term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></div>').join(''):'<div class="card">No Term Exams are open for this class and subject.</div>')+'</div>';
     if(filters&&document.getElementById('change-term-filter'))document.getElementById('change-term-filter').onclick=()=>openTermExamChooser();
     if(resumeId&&resumeToken&&document.getElementById('resume-term-exam'))document.getElementById('resume-term-exam').onclick=()=>termExam(Number(resumeId),resumeToken);
     document.querySelectorAll('.public-term-start').forEach(btn=>btn.onclick=()=>{
       const classes=(state.config?.classes||[]);
-      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your name exactly as it appears on the school list.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label>'+(filters?'<label class="field">Class<input name="class_name" value="'+h(filters.className)+'" readonly></label>':'<label class="field">Class<select name="class_name" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>')+'<button class="btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
+      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your name exactly as it should appear on the submission.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label><label class="field">Group<input name="class_name" value="'+h(filters?.group||examGroup({title:btn.dataset.title}))+'" readonly></label><button class="neo-btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
         e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
         if(!confirm('Ready to begin? Once you continue, the timer starts immediately and continues even if the page is closed.'))return;
         try{
