@@ -173,10 +173,18 @@ function bindExamStart(b){
     const card=b.closest('.neo-exam-card')||b.closest('.card');
     const title=card&&card.querySelector('h3')?card.querySelector('h3').textContent:'this exam';
     const isResume=b.textContent.trim().toLowerCase().includes('resume');
-    const msg=isResume?'You already have this exam in progress. The timer has continued running. Resume now?':'Before you begin, make sure you are ready. The timer starts immediately and secure exams may require camera, microphone and fullscreen access. Continue?';
+    const msg=isResume?'You already have this exam in progress. Resume now?':'Before you begin, make sure you are ready. Proctoring is required for every exam. Continue to the secure setup screen?';
     if(!confirm(msg))return;
-    const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
-    exam(d.attempt_id);
+    const original=b.textContent;
+    b.disabled=true;b.textContent='Opening…';
+    try{
+      const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
+      if(!d||!d.attempt_id)throw new Error('The exam could not be opened. No attempt was created.');
+      await exam(d.attempt_id);
+    }catch(err){
+      b.disabled=false;b.textContent=original;
+      alert(err.message||'The exam could not be opened. Please try again.');
+    }
   };
 }
 
