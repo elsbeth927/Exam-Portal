@@ -195,3 +195,22 @@ h1,h2,h3,p{margin-top:0}
   .register-intro h1{font-size:48px}
   .register-card{padding:24px}
 }
+
+/* IELTS product section */
+.ielts-hero{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;background:linear-gradient(135deg,#0f293b 0,#173d53 62%,#b51e33 180%);color:#fff;border-radius:28px;padding:36px 38px;overflow:hidden;position:relative}
+.ielts-hero:after{content:"IELTS";position:absolute;right:-18px;bottom:-42px;font:900 150px/1 Inter,sans-serif;color:rgba(255,255,255,.035);letter-spacing:-.08em}
+.ielts-hero h1{font:700 3rem/1.02 Georgia,serif;margin:9px 0 14px;max-width:760px}
+.ielts-hero p{color:#d8e3e8;line-height:1.65;max-width:760px}
+.ielts-official-note{display:inline-flex;margin-top:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#dfe8ec;font-size:.82rem}
+.ielts-band-card{min-width:190px;background:#fff;color:var(--ink);border-radius:20px;padding:22px;display:grid;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.ielts-band-card small,.ielts-band-card span{color:var(--mut)}.ielts-band-card strong{font-size:3rem;color:var(--red);margin:4px 0}
+.ielts-tabs{display:flex;gap:8px;margin:24px 0 18px}.ielts-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;font-weight:850;color:#617684}.ielts-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ielts-series-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ielts-volume{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 8px 24px rgba(16,38,54,.04)}
+.ielts-volume-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding-bottom:17px;border-bottom:1px solid #edf0f1}.ielts-volume h3{margin:7px 0 0;font-size:1.18rem}.ielts-volume-no{font:700 2.4rem Georgia,serif;color:#d8dee1}
+.ielts-skill-list{display:grid}.ielts-skill-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid #eef1f2}.ielts-skill-row:last-child{border-bottom:0}.ielts-skill-row small{display:block;color:var(--mut);margin-top:4px}
+.ielts-audio-card{margin:0 0 18px;padding:16px;border:1px solid #ccd9e0;border-radius:16px;background:linear-gradient(135deg,#f4f8fa,#edf4f7);display:flex;justify-content:space-between;gap:18px;align-items:center}
+.ielts-audio-card b{display:block;margin:4px 0}.ielts-audio-card small{display:block;color:var(--mut)}
+.ielts-passage{margin:0 0 20px;border:1px solid #d8e1e5;border-radius:16px;background:#fff;overflow:hidden}.ielts-passage summary{padding:14px 16px;background:#f7f9f8;cursor:pointer;font-weight:850}.ielts-passage-body{padding:20px;line-height:1.75;font-family:Georgia,"Times New Roman",serif;font-size:1.02rem}
+@media(max-width:900px){.ielts-series-grid{grid-template-columns:1fr}.ielts-hero{grid-template-columns:1fr}.ielts-band-card{max-width:220px}}
+@media(max-width:620px){.ielts-hero{padding:26px 22px}.ielts-hero h1{font-size:2.25rem}.ielts-audio-card{align-items:flex-start;flex-direction:column}.ielts-volume{padding:18px}}
