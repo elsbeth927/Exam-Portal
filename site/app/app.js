@@ -13,87 +13,154 @@ async function publicApi(path,opt={}){
 }
 async function init(){if(location.hash.includes('type=recovery')){location.replace('/app/reset.html'+location.hash);return}if(location.hash.includes('type=signup')||location.hash.includes('type=email')){sessionStorage.setItem('rb_email_verified','1');history.replaceState(null,'',location.pathname+location.search)}try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
 function login(){
-  const classes=(state.config?.classes||[]);
-  R.innerHTML='<div class="login public-login-layout"><aside class="public-login-rail"><div class="public-rail-inner"><img class="public-rail-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School"><div class="logo"><span>Redbridge</span> Exam Platform</div><button id="public-signin-tab" class="public-rail-btn active" type="button">Sign in</button><button id="public-term-tab" class="public-rail-btn" type="button">Term Exams</button></div></aside><div class="loginbox stack auth-card">'+
-    '<div><div class="mut">Redbridge International School</div><h1>Exam Platform</h1><p class="mut">Sign in with your school account.</p></div>'+
-    '<form id="lf" class="stack">'+
-      '<label class="field">Email<input name="email" type="email" autocomplete="email" required></label>'+
-      '<label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>'+
-      '<button class="btn">Sign in</button>'+
-      '<button id="forgot" class="auth-link" type="button">Forgot password?</button>'+
-      '<div id="le" class="error"></div>'+(sessionStorage.getItem('rb_email_verified')==='1'?'<div class="success">Email verified. You can sign in now.</div>':'')+
-    '</form>'+
-    '<div class="auth-separator"><span>Students</span></div>'+
-    '<button id="register-student" class="btn alt" type="button">Register as a student</button>'+
-    '<button id="main-term-exams" class="btn term-main-btn" type="button">Term Exams</button>'+
-    (state.setupRequired?'<a class="btn alt" href="/app/setup.html" style="text-align:center">First-time administrator setup</a>':'')+
-  '</div></div>';
+  R.innerHTML=`
+  <div class="neo-landing">
+    <header class="neo-header">
+      <button class="neo-brand" type="button" aria-label="Redbridge Exam Platform home">
+        <img src="/app/redbridge-logo.svg" alt="Redbridge International School">
+        <span>Exam Platform</span>
+      </button>
+      <nav class="neo-public-nav">
+        <button id="browse-public" class="neo-link">Exams</button>
+        <button id="term-public" class="neo-link">Term Exams</button>
+        <button id="signin-open" class="neo-btn ghost">Sign in</button>
+        <button id="register-open" class="neo-btn">Create account</button>
+      </nav>
+    </header>
 
-  document.getElementById('public-signin-tab').onclick=()=>login();
-  document.getElementById('public-term-tab').onclick=()=>showPublicTermExams();
-  document.getElementById('main-term-exams').onclick=()=>openTermExamChooser();
+    <main class="neo-hero-wrap">
+      <section class="neo-hero">
+        <div class="neo-eyebrow"><span></span> Secure assessment, reimagined</div>
+        <h1>One platform.<br><em>Every exam.</em></h1>
+        <p>Take IELTS practice, Olympiads, placement tests, term exams and subject assessments in one focused, proctored environment.</p>
+        <div class="neo-hero-actions">
+          <button id="hero-register" class="neo-btn big">Start taking exams</button>
+          <button id="hero-term" class="neo-btn ghost big">Take a Term Exam</button>
+        </div>
+        <div class="neo-trust-row">
+          <span>Timed attempts</span><span>Autosave</span><span>Camera + mic checks</span><span>Instant results</span><span>Certificates</span>
+        </div>
+      </section>
 
-  document.getElementById('lf').onsubmit=async e=>{
-    e.preventDefault();const f=Object.fromEntries(new FormData(e.target));
-    try{
-      const d=await api('/login',{method:'POST',body:JSON.stringify(f)});
-      state.me=d.user;state.csrf=d.csrf;state.token=d.session_token||'';
-      if(state.token)sessionStorage.setItem('rb_session',state.token);
-      render();
-    }catch(x){document.getElementById('le').textContent=x.message}
-  };
+      <section class="neo-showcase">
+        <div class="neo-orbit orbit-a"></div><div class="neo-orbit orbit-b"></div>
+        <article class="neo-feature-card main-card">
+          <div class="neo-card-top"><span class="neo-chip red">LIVE</span><span class="neo-muted">Proctored exam</span></div>
+          <h3>English Olympiad</h3><p>Senior Group · 60 min</p>
+          <div class="neo-progress"><i style="width:74%"></i></div>
+          <div class="neo-card-footer"><span>40 questions</span><b>Start →</b></div>
+        </article>
+        <article class="neo-mini-card mini-one"><span class="neo-icon">◎</span><div><b>IELTS</b><small>Practice tests</small></div></article>
+        <article class="neo-mini-card mini-two"><span class="neo-icon">∑</span><div><b>Math Olympiad</b><small>Junior · Senior</small></div></article>
+        <article class="neo-score-card"><small>Latest score</small><strong>86%</strong><span>Certificate ready</span></article>
+      </section>
+    </main>
 
-  document.getElementById('register-student').onclick=async()=>{
-    try{
-      if(!(state.config?.classes||[]).length){
-        state.config=await api('/config');
-        state.setupRequired=!!state.config.setup_required;
-      }
-    }catch(x){
-      alert('Could not load the class list. Please refresh the page and try again.');
-      return;
-    }
-    const classes=(state.config?.classes||[]);
-    modal(
-    '<h3>Student registration</h3>'+
-    '<p class="mut">Use the student’s own email address. A verification email may be required before the first sign-in.</p>'+
-    '<form id="regf" class="stack">'+
-      '<label class="field">First name<input name="first_name" autocomplete="given-name" required></label>'+
-      '<label class="field">Last name<input name="last_name" autocomplete="family-name" required></label>'+
-      '<label class="field">Class<select name="class_id" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+x.id+'">'+h(x.name)+'</option>').join('')+'</select></label>'+
-      '<label class="field">Email<input name="email" type="email" autocomplete="email" required></label>'+
-      '<label class="field">Create password<input name="password" type="password" minlength="12" autocomplete="new-password" required></label>'+
-      '<div class="mut auth-help">Minimum 12 characters with uppercase, lowercase and a number.</div>'+
-      '<label class="field">Confirm password<input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required></label>'+
-      '<button class="btn">Create student account</button>'+
-      '<div id="re" class="error"></div><div id="rok" class="success"></div>'+
-    '</form>',
-    ()=>document.getElementById('regf').onsubmit=async e=>{
-      e.preventDefault();
-      const o=Object.fromEntries(new FormData(e.target));
-      const er=document.getElementById('re'),ok=document.getElementById('rok');er.textContent='';ok.textContent='';
+    <section class="neo-category-strip" id="public-exam-section">
+      <div class="neo-section-head"><div><span class="neo-kicker">EXAM LIBRARY</span><h2>Choose your challenge</h2></div><p>Focused categories. Clear levels. No classroom clutter.</p></div>
+      <div class="neo-category-grid">
+        ${[
+          ['IELTS','Academic & General','◌'],
+          ['English Olympiad','Junior & Senior','A'],
+          ['Math Olympiad','Junior & Senior','∑'],
+          ['Placement Tests','A1 to C2','↗'],
+          ['Subject Exams','English · Math · Science','□'],
+          ['Term Exams','No account required','●']
+        ].map(x=>'<button class="neo-category-card public-category" data-cat="'+h(x[0])+'"><span class="neo-category-icon">'+x[2]+'</span><b>'+h(x[0])+'</b><small>'+h(x[1])+'</small><i>Explore →</i></button>').join('')}
+      </div>
+    </section>
+
+    <section class="neo-proctor-band">
+      <div><span class="neo-kicker light">SECURE MODE</span><h2>Built for serious exams.</h2></div>
+      <div class="neo-proctor-points">
+        <span><b>01</b> Camera permission</span>
+        <span><b>02</b> Microphone permission</span>
+        <span><b>03</b> Fullscreen monitoring</span>
+        <span><b>04</b> Tab-switch warnings</span>
+        <span><b>05</b> Autosave + resume</span>
+      </div>
+    </section>
+
+    <footer class="neo-footer">Redbridge International School · Exam Platform</footer>
+  </div>`;
+
+  const openSignIn=()=>modal(`
+    <div class="neo-auth-head"><span class="neo-kicker">WELCOME BACK</span><h3>Sign in to your exam account</h3><p>Access your exams, results and certificates.</p></div>
+    <form id="lf" class="stack neo-auth-form">
+      <label class="field">Email<input name="email" type="email" autocomplete="email" required></label>
+      <label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="neo-btn big">Sign in</button>
+      <button id="forgot" class="auth-link" type="button">Forgot password?</button>
+      <div id="le" class="error"></div>
+    </form>`,()=>{
+      document.getElementById('lf').onsubmit=async e=>{
+        e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
+        try{const d=await api('/login',{method:'POST',body:JSON.stringify(data)});state.me=d.user;state.csrf=d.csrf;state.token=d.session_token||'';if(state.token)sessionStorage.setItem('rb_session',state.token);closeModal();state.view='dashboard';render()}
+        catch(x){document.getElementById('le').textContent=x.message}
+      };
+      document.getElementById('forgot').onclick=()=>modal('<div class="neo-auth-head"><span class="neo-kicker">PASSWORD RESET</span><h3>Reset your password</h3></div><form id="fpf" class="stack"><label class="field">Registered email<input name="email" type="email" required></label><button class="neo-btn">Send reset link</button><div id="fpe" class="error"></div><div id="fpok" class="success"></div></form>',()=>document.getElementById('fpf').onsubmit=async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));try{const d=await publicApi('/auth/forgot-password',{method:'POST',body:JSON.stringify(o)});document.getElementById('fpok').textContent=d.message||'If the email exists, a reset link has been sent.'}catch(x){document.getElementById('fpe').textContent=x.message}});
+    });
+
+  const openRegister=()=>modal(`
+    <div class="neo-auth-head"><span class="neo-kicker">NEW CANDIDATE</span><h3>Create your exam account</h3><p>No class assignment required. Use your own email address.</p></div>
+    <form id="regf" class="stack neo-auth-form">
+      <div class="neo-form-grid">
+        <label class="field">First name<input name="first_name" required></label>
+        <label class="field">Last name<input name="last_name" required></label>
+      </div>
+      <label class="field">Email<input name="email" type="email" autocomplete="email" required></label>
+      <label class="field">Create password<input name="password" type="password" minlength="12" required></label>
+      <label class="field">Confirm password<input name="confirm_password" type="password" minlength="12" required></label>
+      <div class="mut auth-help">Minimum 12 characters with uppercase, lowercase and a number.</div>
+      <button class="neo-btn big">Create account</button>
+      <div id="re" class="error"></div><div id="rok" class="success"></div>
+    </form>`,()=>document.getElementById('regf').onsubmit=async e=>{
+      e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const er=document.getElementById('re'),ok=document.getElementById('rok');er.textContent='';ok.textContent='';
       if(o.password!==o.confirm_password){er.textContent='Passwords do not match.';return}
       delete o.confirm_password;
-      try{
-        const d=await publicApi('/student/register',{method:'POST',body:JSON.stringify(o)});
-        ok.textContent=d.message||'Account created. Check your email, then sign in.';
-        e.target.reset();
-      }catch(x){er.textContent=x.message}
-    }
-  )};
+      try{const d=await publicApi('/student/register',{method:'POST',body:JSON.stringify(o)});ok.textContent=d.message||'Account created. Check your email, then sign in.';e.target.reset()}catch(x){er.textContent=x.message}
+    });
 
-  document.getElementById('forgot').onclick=()=>modal(
-    '<h3>Reset password</h3>'+
-    '<p class="mut">Enter the email used for the student account. We will send a secure password-reset link.</p>'+
-    '<form id="fpf" class="stack"><label class="field">Registered email<input name="email" type="email" autocomplete="email" required></label><button class="btn">Send reset link</button><div id="fpe" class="error"></div><div id="fpok" class="success"></div></form>',
-    ()=>document.getElementById('fpf').onsubmit=async e=>{
-      e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const er=document.getElementById('fpe'),ok=document.getElementById('fpok');er.textContent='';ok.textContent='';
-      try{const d=await publicApi('/auth/forgot-password',{method:'POST',body:JSON.stringify(o)});ok.textContent=d.message||'If the email is registered, a reset link has been sent.'}catch(x){er.textContent=x.message}
-    }
-  );
+  document.getElementById('signin-open').onclick=openSignIn;
+  document.getElementById('register-open').onclick=openRegister;
+  document.getElementById('hero-register').onclick=openRegister;
+  document.getElementById('hero-term').onclick=()=>openTermExamChooser();
+  document.getElementById('term-public').onclick=()=>openTermExamChooser();
+  document.getElementById('browse-public').onclick=()=>document.getElementById('public-exam-section').scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.public-category').forEach(b=>b.onclick=()=>b.dataset.cat==='Term Exams'?openTermExamChooser():openRegister());
 }
-function navItems(){const r=state.me.role;if(r==='student')return[['dashboard','Dashboard'],['student-exams','My Exams'],['term-exams','Term Exams'],['student-results','My Results']];const a=[['dashboard','Dashboard'],['questions','Question Bank'],['exams','Exams'],['marking','Marking']];if(r==='academic_admin'||r==='super_admin')a.push(['classes','Classes & Subjects'],['users','Users'],['audit','Audit Log']);return a}
-function render(){R.innerHTML='<div class="shell"><aside class="rail"><button class="school-logo-wrap school-logo-home" id="home-logo" type="button" title="Return to Dashboard" aria-label="Return to Dashboard"><img class="school-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School logo"></button><div class="logo"><span>Redbridge</span> Exam Platform</div><div class="nav">'+navItems().map(([k,l])=>'<button data-v="'+k+'" class="'+(state.view===k?'active':'')+'">'+l+'</button>').join('')+'</div></aside><main class="main"><div class="top"><div><h2 style="margin:0">'+h(navItems().find(x=>x[0]===state.view)?.[1]||'Platform')+'</h2><div class="mut">'+h(state.me.first_name+' '+state.me.last_name)+' · '+h(state.me.role.replaceAll('_',' '))+'</div>'+(state.me.role==='student'&&state.me.class_name?'<div class="student-grade">'+h(state.me.class_name)+'</div>':'')+'</div><button id="logout" class="btn alt">Sign out</button></div><div id="page"></div></main></div>';document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});document.getElementById('home-logo').onclick=()=>{state.view='dashboard';render()};document.getElementById('logout').onclick=async()=>{try{await api('/logout',{method:'POST',body:'{}'})}finally{sessionStorage.removeItem('rb_session');state={me:null,csrf:null,view:'dashboard',data:{},token:'',setupRequired:false,config:state.config||{classes:[]}};login()}};loadView()}
+function navItems(){
+  const r=state.me.role;
+  if(r==='student')return[['dashboard','Discover'],['student-exams','My Exams'],['student-results','Results'],['certificates','Certificates']];
+  return [['dashboard','Overview'],['exams','Exams'],['questions','Question Bank'],['marking','Submissions']];
+}
+function navIcon(k){return ({dashboard:'⌂','student-exams':'◫','student-results':'◉',certificates:'◇',exams:'▣',questions:'?','marking':'✓'}[k]||'•')}
+function render(){
+  const items=navItems();
+  const admin=state.me.role!=='student';
+  R.innerHTML=`
+  <div class="neo-app">
+    <aside class="neo-sidebar">
+      <button class="neo-side-brand" id="home-logo"><img src="/app/redbridge-logo.svg" alt="Redbridge"><span>Exam Platform</span></button>
+      <div class="neo-side-section">${items.map(([k,l])=>'<button data-v="'+k+'" class="'+(state.view===k?'active':'')+'"><span>'+navIcon(k)+'</span>'+h(l)+'</button>').join('')}</div>
+      <div class="neo-side-bottom">
+        ${admin?'<div class="neo-admin-pill"><i></i><div><b>Admin mode</b><small>Exam operations</small></div></div>':'<div class="neo-admin-pill"><i class="green"></i><div><b>Candidate</b><small>Secure exam account</small></div></div>'}
+        <button id="logout" class="neo-signout">Sign out</button>
+      </div>
+    </aside>
+    <main class="neo-main">
+      <header class="neo-topbar">
+        <div><span class="neo-kicker">${admin?'ADMIN CONSOLE':'CANDIDATE PORTAL'}</span><h2>${h(items.find(x=>x[0]===state.view)?.[1]||'Exam Platform')}</h2></div>
+        <div class="neo-profile"><div><b>${h(state.me.first_name+' '+state.me.last_name)}</b><small>${h(state.me.email||state.me.role.replaceAll('_',' '))}</small></div><span>${h((state.me.first_name||'R').slice(0,1)+(state.me.last_name||'').slice(0,1))}</span></div>
+      </header>
+      <div id="page" class="neo-page"></div>
+    </main>
+  </div>`;
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});
+  document.getElementById('home-logo').onclick=()=>{state.view='dashboard';render()};
+  document.getElementById('logout').onclick=async()=>{try{await api('/logout',{method:'POST',body:'{}'})}finally{sessionStorage.removeItem('rb_session');state={me:null,csrf:null,view:'dashboard',data:{},token:'',setupRequired:false,config:state.config||{classes:[]}};login()}};
+  loadView();
+}
 async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){const d=await api('/dashboard');let quote='';if(state.me.role==='student'){const quotes=[{src:'/app/motivation/motivation-1.webp?v=20261006-originalhq3',alt:'Small steps every day lead to big results.'},{src:'/app/motivation/motivation-2.webp?v=20261006-originalhq3',alt:"Believe you can, and you're halfway there."},{src:'/app/motivation/motivation-3.webp?v=20261006-originalhq3',alt:'Success begins with the courage to try.'},{src:'/app/motivation/motivation-4.webp?v=20261006-originalhq3',alt:'Dream big, work hard, stay focused.'},{src:'/app/motivation/motivation-5.webp?v=20261006-originalhq3',alt:'Mistakes are proof that you are learning.'}];let qi=Number(localStorage.getItem('rb_quote_image_index')||'-1');qi=(qi+1)%quotes.length;localStorage.setItem('rb_quote_image_index',String(qi));const q=quotes[qi];quote='<div class="card motivation-card"><img src="'+q.src+'" alt="'+h(q.alt)+'"></div>';}P.innerHTML='<div class="grid">'+Object.entries(d).map(([k,v])=>'<div class="card metric"><div class="mut">'+h(k.replaceAll('_',' '))+'</div><b>'+h(v)+'</b></div>').join('')+'</div>'+quote}
 else if(state.view==='classes'){const [cs,ss]=await Promise.all([api('/classes'),api('/subjects')]);P.innerHTML='<div class="grid"><div class="card"><h3 class="section-title">Classes</h3><form id="cf" class="row"><input name="name" placeholder="10A" required><input name="grade" type="number" min="1" max="11" placeholder="Grade" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+cs.map(x=>'<tr><td>'+h(x.name)+'</td><td>Grade '+h(x.grade)+'</td></tr>').join('')+'</tbody></table></div><div class="card"><h3 class="section-title">Subjects</h3><form id="sf" class="row"><input name="name" placeholder="Mathematics" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+ss.map(x=>'<tr><td>'+h(x.name)+'</td></tr>').join('')+'</tbody></table></div></div>';document.getElementById('cf').onsubmit=e=>submitForm(e,'/classes');document.getElementById('sf').onsubmit=e=>submitForm(e,'/subjects')}
 else if(state.view==='users'){const rows=await api('/users');P.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h3 class="section-title">School users</h3><button id="nu" class="btn sm">New user</button></div><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+h(x.first_name+' '+x.last_name)+'</td><td>'+h(x.email)+'</td><td>'+h(x.role)+'</td><td>'+h(x.status)+'</td></tr>').join('')+'</tbody></table></div>';document.getElementById('nu').onclick=()=>modal('<h3>New user</h3><form id="uf" class="stack"><label class="field">First name<input name="first_name" required></label><label class="field">Last name<input name="last_name" required></label><label class="field">Email<input name="email" type="email" required></label><label class="field">Role<select name="role"><option>student</option><option>teacher</option><option>academic_admin</option></select></label><label class="field">Temporary password<input name="password" type="password" required></label><button class="btn">Create</button></form>',()=>document.getElementById('uf').onsubmit=e=>submitForm(e,'/users',true))}
