@@ -441,7 +441,17 @@ async function openMarking(aid){
   }catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}
 }
 async function submitForm(e,path,close=false){e.preventDefault();const o=Object.fromEntries(new FormData(e.target));try{await api(path,{method:'POST',body:JSON.stringify(o)});if(close)closeModal();loadView()}catch(x){alert(x.message)}}
-function modal(content,onopen){const d=document.createElement('div');d.className='modal';d.id='modal';d.innerHTML='<div class="card"><div class="row" style="justify-content:flex-end"><button id="mc" class="btn alt sm">Close</button></div>'+content+'</div>';document.body.appendChild(d);document.getElementById('mc').onclick=closeModal;onopen&&onopen()}
+function modal(content,onopen){
+  closeModal();
+  const d=document.createElement('div');
+  d.className='modal-backdrop';
+  d.id='modal';
+  d.innerHTML='<div class="modal" role="dialog" aria-modal="true"><div class="row" style="justify-content:flex-end"><button id="mc" class="btn alt sm" type="button">Close</button></div>'+content+'</div>';
+  document.body.appendChild(d);
+  document.getElementById('mc').onclick=closeModal;
+  d.addEventListener('click',e=>{if(e.target===d)closeModal()});
+  onopen&&onopen();
+}
 function closeModal(){document.getElementById('modal')?.remove()}
 async function exam(aid){
   state.view='exam';
