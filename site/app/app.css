@@ -230,3 +230,6 @@ h1,h2,h3,p{margin-top:0}
 
 .proctor-lock{margin:14px 0 18px;padding:16px 18px;border-radius:14px;border:1px solid #e2c36a;background:#fff8df;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .proctor-lock b{color:#7a5a00}.proctor-lock span{color:#6e6250}
+
+.exam-interaction-locked{pointer-events:none;user-select:none;opacity:.58;filter:saturate(.75)}
+.exam-interaction-locked .choice{cursor:not-allowed}
