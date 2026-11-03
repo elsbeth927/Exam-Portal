@@ -113,10 +113,10 @@ function login(){
 }
 function navItems(){
   const r=state.me.role;
-  if(r==='student')return[['dashboard','Discover'],['student-exams','My Exams'],['student-results','Results'],['certificates','Certificates']];
+  if(r==='student')return[['dashboard','Discover'],['ielts','IELTS'],['student-exams','My Exams'],['student-results','Results'],['certificates','Certificates']];
   return [['dashboard','Overview'],['exams','Exams'],['questions','Question Bank'],['marking','Submissions']];
 }
-function navIcon(k){return ({dashboard:'⌂','student-exams':'◫','student-results':'◉',certificates:'◇',exams:'▣',questions:'?','marking':'✓'}[k]||'•')}
+function navIcon(k){return ({dashboard:'⌂',ielts:'I','student-exams':'◫','student-results':'◉',certificates:'◇',exams:'▣',questions:'?','marking':'✓'}[k]||'•')}
 function render(){
   const items=navItems();
   const admin=state.me.role!=='student';
@@ -178,6 +178,32 @@ function bindExamStart(b){
     const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
     exam(d.attempt_id);
   };
+}
+
+
+function renderIELTSModule(series,module){
+  if(!series.length)return '<div class="neo-empty">'+h(module)+' practice sets are being prepared.</div>';
+  return '<div class="ielts-series-grid">'+series.map(([name,items],idx)=>{
+    const order=['Full Mock','Listening','Reading','Writing','Speaking'];
+    items.sort((a,b)=>order.indexOf(a.skill)-order.indexOf(b.skill));
+    return '<article class="ielts-volume"><div class="ielts-volume-top"><div><span class="neo-kicker">PRACTICE VOLUME '+String(idx+1).padStart(2,'0')+'</span><h3>'+h(name)+'</h3></div><span class="ielts-volume-no">'+String(idx+1).padStart(2,'0')+'</span></div>'+
+      '<div class="ielts-skill-list">'+items.map(x=>'<div class="ielts-skill-row"><div><b>'+h(x.skill||'IELTS')+'</b><small>'+h(x.delivery_mode||'Practice')+' · '+h(x.duration_min)+' min</small></div><button class="neo-btn sm ielts-start" data-id="'+x.id+'">'+(x.attempt_status==='IN_PROGRESS'?'Resume':'Start')+'</button></div>').join('')+'</div></article>';
+  }).join('')+'</div>';
+}
+function ieltsQuestionResource(q){
+  let out='';
+  if(q.audio_script)out+='<div class="ielts-audio-card"><div><span class="neo-kicker">LISTENING</span><b>'+h(q.audio_label||'Play audio')+'</b><small>Original Redbridge practice recording generated in your browser.</small></div><button type="button" class="neo-btn sm ielts-audio-play" data-script="'+encodeURIComponent(q.audio_script)+'">▶ Play once</button></div>';
+  if(q.passage)out+='<details class="ielts-passage" open><summary><span class="neo-kicker">READING PASSAGE</span> '+h(q.passage_title||'Passage')+'</summary><div class="ielts-passage-body">'+h(q.passage).replaceAll('\\n','<br>')+'</div></details>';
+  return out;
+}
+function bindIELTSAudio(){
+  document.querySelectorAll('.ielts-audio-play').forEach(btn=>btn.onclick=()=>{
+    if(!('speechSynthesis' in window)){alert('Audio playback is not supported in this browser.');return}
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(decodeURIComponent(btn.dataset.script||''));u.lang='en-GB';u.rate=.92;u.pitch=1;
+    const voices=speechSynthesis.getVoices();const v=voices.find(x=>/^en-GB/i.test(x.lang))||voices.find(x=>/^en/i.test(x.lang));if(v)u.voice=v;
+    btn.disabled=true;btn.textContent='Playing…';u.onend=u.onerror=()=>{btn.disabled=false;btn.textContent='▶ Play once'};speechSynthesis.speak(u);
+  });
 }
 
 async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){
@@ -244,6 +270,28 @@ else if(state.view==='marking'){
   document.querySelectorAll('.open-marking').forEach(b=>b.onclick=()=>openMarking(Number(b.dataset.id)));
 }
 else if(state.view==='term-exams'){await showPublicTermExams(true);return}
+else if(state.view==='ielts'){
+  const es=(await api('/student/exams')).filter(x=>x.product_family==='IELTS'||examCategory(x)==='IELTS');
+  const modules=['Academic','General Training'];
+  const current='Academic';
+  const academic=es.filter(x=>(x.module||'Academic')==='Academic');
+  const bySeries={};
+  academic.forEach(x=>{const k=x.series||x.title;bySeries[k]??=[];bySeries[k].push(x)});
+  const series=Object.entries(bySeries).sort((a,b)=>a[0].localeCompare(b[0]));
+  P.innerHTML=
+    '<section class="ielts-hero"><div><span class="neo-kicker">IELTS TEST CENTER</span><h1>Practice by skill or simulate the full test.</h1><p>Original Redbridge IELTS-style material arranged around the official IELTS structure: Listening, Reading, Writing and full Academic simulations.</p><div class="ielts-official-note">Academic mock · Listening 40 questions · Reading 40 questions · Writing 2 tasks</div></div><div class="ielts-band-card"><small>Target band</small><strong>7.0+</strong><span>Practice → review → retake</span></div></section>'+
+    '<div class="ielts-tabs"><button class="active" data-module="Academic">Academic</button><button data-module="General Training">General Training</button></div>'+
+    '<section id="ielts-module-content">'+renderIELTSModule(series,current)+'</section>';
+  document.querySelectorAll('.ielts-tabs button').forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll('.ielts-tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+    const mod=btn.dataset.module;
+    const rows=es.filter(x=>(x.module||'Academic')===mod);
+    const grouped={};rows.forEach(x=>{const k=x.series||x.title;grouped[k]??=[];grouped[k].push(x)});
+    document.getElementById('ielts-module-content').innerHTML=renderIELTSModule(Object.entries(grouped).sort((a,b)=>a[0].localeCompare(b[0])),mod);
+    document.querySelectorAll('.ielts-start').forEach(bindExamStart);
+  });
+  document.querySelectorAll('.ielts-start').forEach(bindExamStart);
+}
 else if(state.view==='student-exams'){
   const es=await api('/student/exams');
   const cats=['All',...new Set(es.map(examCategory))];
@@ -336,7 +384,7 @@ async function termExam(aid,token){
   const finish=()=>{closed=true;clearInterval(timerHandle);clearInterval(autosaveHandle);sessionStorage.removeItem('rb_term_attempt');sessionStorage.removeItem('rb_term_token');d.questions.forEach(q=>localStorage.removeItem(draftKey(q.id)));alert('Your Term Exam has been submitted successfully.');state.me?render():showPublicTermExams()};
   E.innerHTML='<div class="exam-watermark">'+h(d.student_name+' · '+d.class_name)+'</div><div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.student_name)+' · '+h(d.class_name)+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div class="timer" id="tm"></div></div>'+
     (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
-    '<form id="term-exam-form" class="card exam-paper">'+d.questions.map((q,i)=>'<div class="examq"><div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+'<button class="btn" type="submit">Submit Term Exam</button></form>';
+    '<form id="term-exam-form" class="card exam-paper">'+d.questions.map((q,i)=>'<div class="examq">'+ieltsQuestionResource(q)+'<div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+'<button class="btn" type="submit">Submit Term Exam</button></form>';
   d.questions.forEach(q=>{let draft=null;try{draft=JSON.parse(localStorage.getItem(draftKey(q.id))||'null')}catch{};if(!draft)return;const els=[...document.querySelectorAll('[data-q="'+q.id+'"]')];if(q.type==='multi')els.forEach(el=>el.checked=Array.isArray(draft.value)&&draft.value.includes(el.value));else if(q.type==='mcq'||q.type==='truefalse')els.forEach(el=>el.checked=draft.value===el.value);else if(els[0])els[0].value=draft.value??''});
   document.querySelectorAll('[data-q]').forEach(el=>{const ev=(el.tagName==='TEXTAREA'||el.type==='text')?'input':'change';el.addEventListener(ev,()=>{const q=questionMap.get(String(el.dataset.q));if(!q)return;const val=currentAnswer(q);try{localStorage.setItem(draftKey(q.id),JSON.stringify({value:val,at:Date.now()}))}catch{}clearTimeout(saveTimers.get(String(q.id)));saveTimers.set(String(q.id),setTimeout(()=>saveOne(String(q.id),val),1200))})});
   document.getElementById('term-exam-form').onsubmit=async e=>{e.preventDefault();if(!confirm('Submit this Term Exam? You will not be able to change your answers afterward.'))return;await checkpoint();await termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'});finish()};
@@ -599,6 +647,7 @@ async function exam(aid){
     document.getElementById('fsbtn').onclick=ensureFullscreen;
     document.getElementById('proctor-retry').onclick=startProctor;
     restoreEmergencyDrafts();
+    bindIELTSAudio();
 
     document.querySelectorAll('[data-q]').forEach(el=>{
       const handler=()=>{
