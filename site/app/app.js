@@ -340,19 +340,62 @@ else if(state.view==='student-exams'){
 else if(state.view==='student-results'){const rs=await api('/student/results');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Exam</th><th>Score</th><th>%</th><th>Status</th><th></th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(x.title)+'</td><td>'+(x.results_published?h(x.score+'/'+x.total):'Not released')+'</td><td>'+(x.results_published?h(x.percentage):'—')+'</td><td>'+h(x.results_published?(x.passed?'Pass':'Below pass mark'):'Pending')+'</td><td>'+(x.results_published?'<button class="btn sm review-result" data-id="'+x.id+'">Review answers</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';document.querySelectorAll('.review-result').forEach(b=>b.onclick=async()=>{const d=await api('/student/attempts/'+b.dataset.id+'/result');const fmt=v=>Array.isArray(v)?v.join(', '):(v===null||v===undefined||v===''?'—':String(v));modal('<h3>'+h(d.title)+'</h3><div class="result-summary"><b>'+h(d.score+'/'+d.total)+'</b> · '+h(d.percentage)+'% · '+h(d.passed?'Pass':'Below pass mark')+'</div><div class="review-list">'+d.questions.map(q=>'<div class="review-item '+(q.is_correct===true?'correct':q.is_correct===false?'incorrect':'')+'"><div><b>Question '+h(q.number)+'</b></div><div class="mut">'+h(q.text||'')+'</div><div>Your answer: <b>'+h(fmt(q.answer))+'</b></div><div>Correct answer: <b>'+h(fmt(q.correct))+'</b></div><div>Marks: '+h(q.marks_awarded)+'</div></div>').join('')+'</div>')})}
 else if(state.view==='certificates'){
   const rs=(await api('/student/results')).filter(x=>x.results_published&&x.passed);
-  P.innerHTML='<div class="neo-section-head"><div><span class="neo-kicker">ACHIEVEMENTS</span><h2>Certificates</h2></div><p>Certificates become available after a successful published result.</p></div>'+
-    '<div class="neo-cert-grid">'+(rs.length?rs.map(x=>'<article class="neo-cert-card"><div class="neo-cert-mark">R</div><div><span class="neo-kicker">CERTIFICATE</span><h3>'+h(x.title)+'</h3><p>'+h(state.me.first_name+' '+state.me.last_name)+' · '+Math.round(Number(x.percentage||0))+'%</p></div><button class="neo-btn cert-download" data-title="'+h(x.title)+'" data-score="'+h(x.percentage)+'">Open certificate</button></article>').join(''):'<div class="neo-empty">Pass an exam to unlock a certificate.</div>')+'</div>';
-  document.querySelectorAll('.cert-download').forEach(btn=>btn.onclick=()=>openCertificate(btn.dataset.title,btn.dataset.score));
+  await Promise.all(rs.map(x=>api('/student/attempts/'+x.id+'/certificate',{method:'POST',body:'{}'}).catch(()=>null)));
+  const certs=await api('/student/certificates');
+  P.innerHTML='<div class="neo-section-head"><div><span class="neo-kicker">ACHIEVEMENTS</span><h2>Certificates</h2></div><p>Each certificate has a permanent reference number and QR verification link.</p></div>'+
+    '<div class="neo-cert-grid">'+(certs.length?certs.map(x=>'<article class="neo-cert-card"><div class="neo-cert-mark">'+h(certIcon(x.certificate_type))+'</div><div><span class="neo-kicker">'+h(certLabel(x.certificate_type))+'</span><h3>'+h(x.title)+'</h3><p>'+h(state.me.first_name+' '+state.me.last_name)+' · '+Math.round(Number(x.percentage||0))+'% · '+h(x.reference_no)+'</p></div><button class="neo-btn cert-download" data-cert="'+h(String(x.id))+'">Open certificate</button></article>').join(''):'<div class="neo-empty">Pass a published exam to unlock a certificate.</div>')+'</div>';
+  document.querySelectorAll('.cert-download').forEach(btn=>btn.onclick=()=>{const cert=certs.find(x=>String(x.id)===btn.dataset.cert);if(cert)openCertificate(cert)});
 }
 else if(state.view==='audit'){const rs=await api('/audit');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(new Date(x.at).toLocaleString())+'</td><td>'+h(x.user_label||'')+'</td><td>'+h(x.action)+'</td><td>'+h((x.entity||'')+' '+(x.entity_id||''))+'</td></tr>').join('')+'</tbody></table></div>'}}catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}}
 
-function openCertificate(title,score){
+function certIcon(type){return ({IELTS:'I',SCIENCE:'S',OLYMPIAD:'★',ENGLISH:'E',MATH:'π',GENERAL:'R'})[type]||'R'}
+function certLabel(type){return ({IELTS:'IELTS PRACTICE CERTIFICATE',SCIENCE:'SCIENCE CERTIFICATE',OLYMPIAD:'OLYMPIAD AWARD',ENGLISH:'ENGLISH CERTIFICATE',MATH:'MATHEMATICS CERTIFICATE',GENERAL:'CERTIFICATE OF ACHIEVEMENT'})[type]||'CERTIFICATE OF ACHIEVEMENT'}
+function certTheme(type){
+  if(type==='SCIENCE')return {accent:'#075f46',accent2:'#0d7b60',title:'Certificate of Achievement',subtitle:'Science Assessment'};
+  if(type==='OLYMPIAD')return {accent:'#482063',accent2:'#6c2d8e',title:'Certificate of Excellence',subtitle:'Academic Olympiad Award'};
+  if(type==='ENGLISH')return {accent:'#0e2e57',accent2:'#173f74',title:'Certificate of Achievement',subtitle:'English Language Assessment'};
+  if(type==='MATH')return {accent:'#0c3555',accent2:'#008d95',title:'Certificate of Achievement',subtitle:'Mathematics Assessment'};
+  if(type==='IELTS')return {accent:'#092b5b',accent2:'#a50f2d',title:'Certificate of Performance',subtitle:'IELTS Practice Assessment'};
+  return {accent:'#153650',accent2:'#b51e33',title:'Certificate of Achievement',subtitle:'Academic Assessment'};
+}
+function certAward(cert){
+  const p=Number(cert.percentage||0);
+  if(cert.certificate_type==='OLYMPIAD'){
+    if(p>=90)return 'Gold Distinction';
+    if(p>=80)return 'Silver Distinction';
+    if(p>=70)return 'Bronze Distinction';
+    return 'Merit Award';
+  }
+  return Math.round(p)+'%';
+}
+function openCertificate(cert){
   const name=state.me.first_name+' '+state.me.last_name;
+  const theme=certTheme(cert.certificate_type);
+  const issued=new Date(cert.issued_at).toLocaleDateString('en-GB',{timeZone:'Asia/Tashkent',day:'2-digit',month:'long',year:'numeric'});
+  const verifyUrl=location.origin+'/app/verify.html?ref='+encodeURIComponent(cert.reference_no)+'&token='+encodeURIComponent(cert.verification_token);
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data='+encodeURIComponent(verifyUrl);
+  const level=cert.group_label||cert.module||cert.subject||'Redbridge Assessment';
+  const score=Math.round(Number(cert.percentage||0));
+  const isIELTS=cert.certificate_type==='IELTS';
+  const descriptor=isIELTS
+    ?'for successfully completing the Redbridge IELTS practice assessment. This is a school-issued practice assessment certificate and is not an official IELTS Test Report Form.'
+    :'for successfully demonstrating strong academic performance and meeting the required standard in this Redbridge assessment.';
+  const metricLabel=cert.certificate_type==='OLYMPIAD'?'Award':(isIELTS?'Practice Score':'Score');
+  const metricValue=cert.certificate_type==='OLYMPIAD'?certAward(cert):(score+'%');
   const w=window.open('','_blank');
   if(!w){alert('Please allow pop-ups to open the certificate.');return}
-  const html='<!doctype html><html><head><title>Certificate</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f5f2eb;color:#102636}.sheet{width:1050px;min-height:720px;margin:30px auto;background:white;padding:70px;box-sizing:border-box;border-top:12px solid #b51e33}.brand{letter-spacing:.12em;text-transform:uppercase}.title{font:700 58px Georgia,serif;margin:85px 0 18px}.name{font:italic 44px Georgia,serif;color:#b51e33;margin:26px 0}.exam{font-size:25px}.score{margin-top:30px;font-size:21px}.foot{margin-top:90px;padding-top:18px;border-top:1px solid #ddd;display:flex;justify-content:space-between}@media print{body{background:#fff}.sheet{margin:0}}</style></head><body><div class="sheet"><div class="brand">Redbridge International School · Exam Platform</div><div class="title">Certificate of Achievement</div><p>This certifies that</p><div class="name">'+h(name)+'</div><p>successfully completed</p><div class="exam">'+h(title)+'</div><div class="score">Final score: <b>'+Math.round(Number(score||0))+'%</b></div><div class="foot"><span>Redbridge Exam Platform</span><span>'+new Date().toLocaleDateString()+'</span></div></div></body></html>';
-  w.document.write(html);w.document.close();setTimeout(()=>w.print(),250);
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>'+h(cert.reference_no)+'</title><style>'+
+  '*{box-sizing:border-box}body{margin:0;background:#e8e8e8;font-family:Georgia,"Times New Roman",serif;color:#10233a}.actions{width:1120px;margin:18px auto 0;display:flex;justify-content:flex-end;gap:8px}.actions button{border:0;background:#102b3d;color:#fff;border-radius:10px;padding:10px 16px;font:700 14px Arial;cursor:pointer}.cert{width:1120px;height:792px;margin:12px auto 30px;background:linear-gradient(135deg,#fffaf0,#fff 55%,#f6ead1);position:relative;overflow:hidden;border:14px solid '+theme.accent+';box-shadow:0 20px 60px rgba(0,0,0,.18);padding:46px 72px;text-align:center}.cert:before{content:"";position:absolute;inset:12px;border:3px solid #c99623;pointer-events:none}.cert:after{content:"";position:absolute;width:580px;height:180px;background:'+theme.accent+';left:50%;top:176px;transform:translateX(-50%) skewX(-9deg);border:5px solid #d5a63c;border-radius:18px;z-index:0}.brand{position:relative;z-index:2;font:800 34px/1 Arial,sans-serif;letter-spacing:.03em;text-transform:uppercase}.brand small{display:block;font:700 13px Arial;letter-spacing:.2em;color:#9b7525;margin-bottom:8px}.title{position:relative;z-index:2;color:#f7df9b;font-size:54px;font-style:italic;font-weight:700;margin:78px 0 44px;text-shadow:0 2px 2px rgba(0,0,0,.45)}.subtitle{font-size:34px;font-weight:700;color:'+theme.accent+';margin:0 0 18px}.awardto{font-size:18px;font-style:italic}.name{font-size:55px;font-style:italic;font-weight:700;margin:10px 0 12px;color:#10233a}.desc{max-width:790px;margin:0 auto;font-size:18px;line-height:1.45;font-style:italic}.facts{display:grid;grid-template-columns:1.1fr .7fr 1fr 1.55fr;gap:10px;margin:34px auto 0;max-width:880px}.fact{border:2px solid #d4a32d;border-radius:12px;overflow:hidden;background:#fff9e8}.fact b{display:block;background:'+theme.accent+';color:#fff;padding:8px;font-size:15px}.fact span{display:block;padding:12px 7px;font:700 16px Arial,sans-serif}.qr{position:absolute;right:44px;bottom:46px;width:126px}.qr img{width:126px;height:126px;background:#fff;border:5px solid #fff;box-shadow:0 0 0 2px #d4a32d}.qr span{display:block;font:700 12px Arial;margin-top:5px}.footer-note{position:absolute;left:72px;right:210px;bottom:52px;font-size:12px;color:#6d5a38;font-style:italic}.refline{font-family:Arial,sans-serif;font-size:11px;word-break:break-all}@media print{body{background:#fff}.actions{display:none}.cert{margin:0;box-shadow:none;page-break-after:avoid}@page{size:A4 landscape;margin:0}}</style></head><body>'+
+  '<div class="actions"><button onclick="window.print()">Print / Save PDF</button></div>'+
+  '<section class="cert"><div class="brand"><small>Redbridge International School</small>REDBRIDGE INTERNATIONAL SCHOOL</div>'+
+  '<div class="title">'+h(theme.title)+'</div><div class="subtitle">'+h(theme.subtitle)+'</div><div class="awardto">This certificate is proudly awarded to</div>'+
+  '<div class="name">'+h(name)+'</div><div class="desc">'+h(descriptor)+'</div>'+
+  '<div class="facts"><div class="fact"><b>Assessment</b><span>'+h(level)+'</span></div><div class="fact"><b>'+h(metricLabel)+'</b><span>'+h(metricValue)+'</span></div><div class="fact"><b>Date Issued</b><span>'+h(issued)+'</span></div><div class="fact"><b>Reference No.</b><span>'+h(cert.reference_no)+'</span></div></div>'+
+  '<div class="qr"><img src="'+qr+'" alt="Verification QR"><span>Scan to Verify</span></div>'+
+  '<div class="footer-note">'+h(cert.title)+'<br><span class="refline">'+h(cert.reference_no)+'</span></div></section></body></html>';
+  w.document.write(html);w.document.close();
 }
+
 
 async function openTermExamChooser(){
   try{
