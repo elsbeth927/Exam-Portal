@@ -174,3 +174,24 @@ h1,h2,h3,p{margin-top:0}
   .neo-main{padding:0 16px 40px}.neo-topbar{height:86px}.neo-profile>div{display:none}.neo-dashboard-hero{padding:25px;align-items:flex-start;flex-direction:column}.neo-dashboard-hero h1{font-size:2rem}.neo-stat-grid{grid-template-columns:1fr}.neo-exam-grid,.neo-result-grid,.neo-admin-actions{grid-template-columns:1fr}.neo-cert-card{grid-template-columns:auto 1fr}.neo-cert-card .neo-btn{grid-column:1/-1}.neo-form-grid{grid-template-columns:1fr}
   .modal{padding:22px}.exam-top{position:relative}.proctor-dock{width:150px;right:10px;bottom:10px}.proctor-checks{grid-template-columns:1fr}
 }
+
+/* Dedicated candidate registration page */
+.register-page{min-height:100vh;background:
+  radial-gradient(circle at 12% 15%,rgba(181,30,51,.08),transparent 23%),
+  radial-gradient(circle at 85% 20%,rgba(213,164,58,.14),transparent 25%),
+  linear-gradient(180deg,#f8f8f5,#f1f3f0)}
+.register-topbar{height:88px;max-width:1320px;margin:auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between}
+.register-shell{max-width:1180px;margin:0 auto;padding:72px 32px 90px;display:grid;grid-template-columns:.9fr 1.1fr;gap:70px;align-items:center}
+.register-intro h1{font:700 clamp(48px,5vw,76px)/.98 Georgia,serif;letter-spacing:-.045em;margin:12px 0 24px}
+.register-intro p{font-size:1.08rem;line-height:1.7;color:var(--mut);max-width:520px}
+.register-points{display:grid;gap:12px;margin-top:30px;color:#435b6a;font-weight:750}
+.register-card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:34px;box-shadow:var(--shadow)}
+.register-card h2{font:700 2rem Georgia,serif;margin:7px 0}
+.register-card .neo-btn{width:100%}
+.neo-btn:disabled{opacity:.65;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+@media(max-width:800px){
+  .register-topbar{padding:0 18px}
+  .register-shell{grid-template-columns:1fr;padding:40px 20px 70px;gap:32px}
+  .register-intro h1{font-size:48px}
+  .register-card{padding:24px}
+}
