@@ -241,71 +241,51 @@ function openCertificate(title,score){
   const html='<!doctype html><html><head><title>Certificate</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f5f2eb;color:#102636}.sheet{width:1050px;min-height:720px;margin:30px auto;background:white;padding:70px;box-sizing:border-box;border-top:12px solid #b51e33}.brand{letter-spacing:.12em;text-transform:uppercase}.title{font:700 58px Georgia,serif;margin:85px 0 18px}.name{font:italic 44px Georgia,serif;color:#b51e33;margin:26px 0}.exam{font-size:25px}.score{margin-top:30px;font-size:21px}.foot{margin-top:90px;padding-top:18px;border-top:1px solid #ddd;display:flex;justify-content:space-between}@media print{body{background:#fff}.sheet{margin:0}}</style></head><body><div class="sheet"><div class="brand">Redbridge International School · Exam Platform</div><div class="title">Certificate of Achievement</div><p>This certifies that</p><div class="name">'+h(name)+'</div><p>successfully completed</p><div class="exam">'+h(title)+'</div><div class="score">Final score: <b>'+Math.round(Number(score||0))+'%</b></div><div class="foot"><span>Redbridge Exam Platform</span><span>'+new Date().toLocaleDateString()+'</span></div></div></body></html>';
   w.document.write(html);w.document.close();setTimeout(()=>w.print(),250);
 }
+
 async function openTermExamChooser(){
   try{
-    if(!(state.config?.classes||[]).length)state.config=await publicApi('/config');
     const rows=await publicApi('/term-exams');
-    const classes=(state.config?.classes||[]);
-    const subjects=[...new Set(rows.map(x=>x.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     if(!rows.length){alert('No Term Exams are open at the moment.');return}
+    const subjects=[...new Set(rows.map(x=>x.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const groups=[...new Set(rows.map(examGroup))].sort((a,b)=>a.localeCompare(b));
     modal(
-      '<h3>Term Exams</h3><p class="mut">Choose your class and subject. No account or registration is required.</p>'+
-      '<form id="term-filter-form" class="stack">'+
-      '<label class="field">Class<select name="class_id" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+x.id+'" data-grade="'+x.grade+'" data-name="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>'+
+      '<div class="neo-auth-head"><span class="neo-kicker">TERM EXAMS</span><h3>Choose an exam</h3><p>No account is required. Select a subject and group.</p></div>'+
+      '<form id="term-picker" class="stack">'+
       '<label class="field">Subject<select name="subject" required><option value="">Select subject</option>'+subjects.map(s=>'<option value="'+h(s)+'">'+h(s)+'</option>').join('')+'</select></label>'+
-      '<button class="btn">Show available Term Exams</button><div id="term-filter-error" class="error"></div></form>',
-      ()=>document.getElementById('term-filter-form').onsubmit=e=>{
+      '<label class="field">Group<select name="group" required><option value="">Select group</option>'+groups.map(g=>'<option value="'+h(g)+'">'+h(g)+'</option>').join('')+'</select></label>'+
+      '<button class="neo-btn">Show exams</button><div id="term-picker-error" class="error"></div></form>',
+      ()=>document.getElementById('term-picker').onsubmit=e=>{
         e.preventDefault();
-        const fd=new FormData(e.target),sel=e.target.querySelector('[name="class_id"]'),opt=sel.options[sel.selectedIndex];
-        const className=opt?.dataset?.name||opt?.text||'',grade=Number(opt?.dataset?.grade||0),subject=String(fd.get('subject')||'');
-        closeModal();
-        showPublicTermExams(false,{className,grade,subject});
+        const fd=new FormData(e.target),subject=String(fd.get('subject')||''),group=String(fd.get('group')||'');
+        const matches=rows.filter(x=>x.subject===subject&&examGroup(x)===group);
+        if(!matches.length){document.getElementById('term-picker-error').textContent='No open Term Exams match this selection.';return}
+        modal(
+          '<div class="neo-auth-head"><span class="neo-kicker">TERM EXAMS</span><h3>'+h(subject)+' · '+h(group)+'</h3><p>Select the exam you want to take.</p></div>'+
+          '<div class="stack">'+matches.map(x=>'<article class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><b>'+h(x.title)+'</b><div class="mut">'+h(x.duration_min)+' min</div></div><button class="neo-btn term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></article>').join('')+'</div>',
+          ()=>{
+            document.querySelectorAll('.term-start').forEach(btn=>btn.onclick=()=>openTermIdentity(btn.dataset.id,btn.dataset.title,group));
+          }
+        );
       }
     );
   }catch(e){alert(e.message||'Could not load Term Exams.')}
 }
-
-async function showPublicTermExams(inShell=false,filters=null){
-  let mount;
-  if(inShell&&state.me){
-    mount=document.getElementById('page');
-    mount.innerHTML='<div class="card">Loading term exams…</div>';
-  }else{
-    R.innerHTML='<div class="shell public-term-shell"><aside class="rail"><button class="school-logo-wrap" id="public-home-logo" type="button"><img class="school-logo" src="/app/redbridge-logo.svg" alt="Redbridge International School logo"></button><div class="logo"><span>Redbridge</span> Exam Platform</div><div class="nav"><button id="public-signin-tab">Sign in</button><button class="active">Term Exams</button></div></aside><main class="main"><div class="top"><div><h2 style="margin:0">Term Exams</h2><div class="mut">No account or registration required.</div></div></div><div id="public-term-page"></div></main></div>';
-    document.getElementById('public-signin-tab').onclick=()=>login();
-    document.getElementById('public-home-logo').onclick=()=>login();
-    mount=document.getElementById('public-term-page');
-  }
-  try{
-    if(!(state.config?.classes||[]).length)state.config=await api('/config');
-    let rows=await publicApi('/term-exams');
-    if(filters){
-      rows=rows.filter(x=>(!filters.grade||Number(x.grade)===Number(filters.grade))&&(!filters.subject||x.subject===filters.subject));
+function openTermIdentity(examId,title,group){
+  modal(
+    '<div class="neo-auth-head"><span class="neo-kicker">READY TO BEGIN</span><h3>'+h(title)+'</h3><p>Enter your full name. The timer starts immediately after you continue.</p></div>'+
+    '<form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label><label class="field">Group<input name="group_name" value="'+h(group)+'" readonly></label><button class="neo-btn">Start Term Exam</button><div id="term-start-error" class="error"></div></form>',
+    ()=>document.getElementById('term-start-form').onsubmit=async e=>{
+      e.preventDefault();if(!confirm('Ready to begin? The timer will continue even if the page is closed.'))return;
+      const data=Object.fromEntries(new FormData(e.target));
+      try{
+        const d=await publicApi('/term-exams/'+examId+'/start',{method:'POST',body:JSON.stringify(data)});
+        sessionStorage.setItem('rb_term_attempt',String(d.attempt_id));sessionStorage.setItem('rb_term_token',d.term_token);
+        closeModal();termExam(d.attempt_id,d.term_token);
+      }catch(x){document.getElementById('term-start-error').textContent=x.message}
     }
-    const resumeId=sessionStorage.getItem('rb_term_attempt');
-    const resumeToken=sessionStorage.getItem('rb_term_token');
-    const resume=resumeId&&resumeToken?'<div class="card term-resume-card"><div><b>Unfinished Term Exam</b><div class="mut">Your timer has continued running. Resume only if this is your current exam.</div></div><button class="btn" id="resume-term-exam">Resume</button></div>':'';
-    const filterHead=filters?'<div class="card term-filter-summary"><b>'+h(filters.className)+' · '+h(filters.subject)+'</b><div class="mut">Available Term Exams for your selection</div><button id="change-term-filter" class="btn alt sm" type="button">Change class / subject</button></div>':'';
-    mount.innerHTML=resume+filterHead+'<div class="stack">'+(rows.length?rows.map(x=>'<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · Grade '+h(x.grade)+' · '+h(x.duration_min)+' min</div></div><button class="btn public-term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></div>').join(''):'<div class="card">No Term Exams are open for this class and subject.</div>')+'</div>';
-    if(filters&&document.getElementById('change-term-filter'))document.getElementById('change-term-filter').onclick=()=>openTermExamChooser();
-    if(resumeId&&resumeToken&&document.getElementById('resume-term-exam'))document.getElementById('resume-term-exam').onclick=()=>termExam(Number(resumeId),resumeToken);
-    document.querySelectorAll('.public-term-start').forEach(btn=>btn.onclick=()=>{
-      const classes=(state.config?.classes||[]);
-      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your name exactly as it appears on the school list.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label>'+(filters?'<label class="field">Class<input name="class_name" value="'+h(filters.className)+'" readonly></label>':'<label class="field">Class<select name="class_name" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>')+'<button class="btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
-        e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
-        if(!confirm('Ready to begin? Once you continue, the timer starts immediately and continues even if the page is closed.'))return;
-        try{
-          const d=await publicApi('/term-exams/'+btn.dataset.id+'/start',{method:'POST',body:JSON.stringify(data)});
-          sessionStorage.setItem('rb_term_attempt',String(d.attempt_id));
-          sessionStorage.setItem('rb_term_token',d.term_token);
-          closeModal();
-          try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch{}
-          termExam(d.attempt_id,d.term_token);
-        }catch(x){document.getElementById('term-start-error').textContent=x.message}
-      });
-    });
-  }catch(e){mount.innerHTML='<div class="card error">'+h(e.message)+'</div>'}
+  );
 }
+async function showPublicTermExams(){return openTermExamChooser()}
 
 async function termExam(aid,token){
   R.innerHTML='<div class="main secure-exam"><div id="exam"></div></div>';
