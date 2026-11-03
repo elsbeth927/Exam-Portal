@@ -453,8 +453,8 @@ async function termExam(aid,token){
     '<form id="term-exam-form" class="card exam-paper">'+d.questions.map((q,i)=>'<div class="examq">'+ieltsQuestionResource(q)+'<div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+'<button class="btn" type="submit">Submit Term Exam</button></form>';
 
   d.questions.forEach(q=>{let draft=null;try{draft=JSON.parse(localStorage.getItem(draftKey(q.id))||'null')}catch{};if(!draft)return;const els=[...document.querySelectorAll('[data-q="'+q.id+'"]')];if(q.type==='multi')els.forEach(el=>el.checked=Array.isArray(draft.value)&&draft.value.includes(el.value));else if(q.type==='mcq'||q.type==='truefalse')els.forEach(el=>el.checked=draft.value===el.value);else if(els[0])els[0].value=draft.value??''});
-  const form=document.getElementById('term-exam-form');[...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=true);
-  document.getElementById('term-proctor-enable').onclick=async()=>{const ok=await startProctor();if(!ok)return;const fs=await ensureFullscreen();if(!fs){const s=document.getElementById('term-proctor-status');if(s){s.textContent='Camera and microphone are enabled. Please allow fullscreen to begin.';s.className='error'}return}enableIntegrityMonitoring();document.getElementById('term-proctor-lock')?.remove();[...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=false);const s=document.getElementById('term-proctor-status');if(s){s.textContent='Proctoring active. You may begin the exam.';s.className='success'}};
+  const form=document.getElementById('term-exam-form');form.classList.add('exam-interaction-locked');
+  document.getElementById('term-proctor-enable').onclick=async()=>{const ok=await startProctor();if(!ok)return;const fs=await ensureFullscreen();if(!fs){const s=document.getElementById('term-proctor-status');if(s){s.textContent='Camera and microphone are enabled. Please allow fullscreen to begin.';s.className='error'}return}enableIntegrityMonitoring();document.getElementById('term-proctor-lock')?.remove();form.classList.remove('exam-interaction-locked');[...form.querySelectorAll('input,textarea,select,button')].forEach(el=>{el.disabled=false;el.removeAttribute('aria-disabled')});const s=document.getElementById('term-proctor-status');if(s){s.textContent='Proctoring active. You may begin the exam.';s.className='success'}};
   const enableIntegrityMonitoring=()=>{if(integrityMonitoring)return;integrityMonitoring=true;document.addEventListener('visibilitychange',onVisibility);window.addEventListener('blur',onBlur);document.addEventListener('fullscreenchange',onFullscreen);document.addEventListener('contextmenu',blockContext);document.addEventListener('copy',blockClipboard);document.addEventListener('cut',blockClipboard);document.addEventListener('paste',blockClipboard);document.addEventListener('keydown',onKey)};
   document.querySelectorAll('[data-q]').forEach(el=>{const ev=(el.tagName==='TEXTAREA'||el.type==='text')?'input':'change';el.addEventListener(ev,()=>{const q=questionMap.get(String(el.dataset.q));if(!q)return;const val=currentAnswer(q);try{localStorage.setItem(draftKey(q.id),JSON.stringify({value:val,at:Date.now()}))}catch{}clearTimeout(saveTimers.get(String(q.id)));saveTimers.set(String(q.id),setTimeout(()=>saveOne(String(q.id),val),1200))})});
   form.onsubmit=async e=>{e.preventDefault();if(submitting)return;suppressIntegrity=true;const ok=confirm('Submit this Term Exam? You will not be able to change your answers afterward.');if(!ok){setTimeout(()=>suppressIntegrity=false,500);return}submitting=true;clearInterval(autosaveHandle);saveTimers.forEach(t=>clearTimeout(t));saveTimers.clear();const btn=e.currentTarget.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Submitting…'}try{await checkpoint();await termApi('/term-attempts/'+aid+'/submit',{method:'POST',body:'{}'});finish()}catch{try{const check=await termApi('/term-attempts/'+aid);if(check.status!=='IN_PROGRESS'){finish();return}}catch{}submitting=false;suppressIntegrity=false;if(btn){btn.disabled=false;btn.textContent='Submit Term Exam'}autosaveHandle=setInterval(checkpoint,60000);alert('The exam could not be submitted yet. Your answers are preserved. Please try again.')}};
@@ -746,7 +746,7 @@ async function exam(aid){
     document.getElementById('fsbtn').onclick=ensureFullscreen;
     if(proctored){
       const form=document.getElementById('xaf');
-      [...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=true);
+      form.classList.add('exam-interaction-locked');
       document.getElementById('proctor-retry').onclick=async()=>{
         const ok=await startProctor();
         if(!ok)return;
@@ -758,7 +758,8 @@ async function exam(aid){
         }
         enableIntegrityMonitoring();
         document.getElementById('proctor-lock')?.remove();
-        [...form.querySelectorAll('input,textarea,button[type="submit"]')].forEach(el=>el.disabled=false);
+        form.classList.remove('exam-interaction-locked');
+        [...form.querySelectorAll('input,textarea,select,button')].forEach(el=>{el.disabled=false;el.removeAttribute('aria-disabled')});
         const status=document.getElementById('proctor-consent-status');
         if(status){status.textContent='Proctoring active. You may begin the exam.';status.className='success'}
       };
