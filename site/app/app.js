@@ -410,7 +410,7 @@ async function exam(aid){
 
   const deadline=new Date(d.deadline_at).getTime();
   const serverOffset=new Date(d.server_now).getTime()-Date.now();
-  let timerHandle=null,autosaveHandle=null,closed=false,lastViolationAt=0,violations=0;
+  let timerHandle=null,autosaveHandle=null,closed=false,lastViolationAt=0,violations=0,proctorStream=null,audioCtx=null,audioFrame=null;
   const saveTimers=new Map();
   const questionMap=new Map(d.questions.map(q=>[String(q.id),q]));
   const studentLabel=(state.me.first_name+' '+state.me.last_name+' · '+state.me.email+' · Attempt '+aid);
@@ -430,12 +430,16 @@ async function exam(aid){
     document.removeEventListener('cut',blockClipboard);
     document.removeEventListener('paste',blockClipboard);
     document.removeEventListener('keydown',onKey);
+    if(audioFrame)cancelAnimationFrame(audioFrame);
+    if(audioCtx){try{audioCtx.close()}catch{}audioCtx=null}
+    if(proctorStream){proctorStream.getTracks().forEach(t=>t.stop());proctorStream=null}
   };
 
   const finishToResults=()=>{
     cleanup();
     d.questions.forEach(q=>localStorage.removeItem(draftKey(q.id)));
     document.title='Redbridge Exam Platform';
+    document.getElementById('proctor-dock')?.remove();
     state.view='student-results';
     render();
   };
@@ -513,6 +517,32 @@ async function exam(aid){
     }catch{}
   };
 
+  const startProctor=async()=>{
+    const status=document.getElementById('proctor-consent-status');
+    if(status)status.textContent='Requesting camera and microphone…';
+    try{
+      proctorStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:400}},audio:true});
+      const dock=document.createElement('div');dock.className='proctor-dock';dock.id='proctor-dock';
+      dock.innerHTML='<video id="proctor-video" autoplay muted playsinline></video><div class="proctor-row"><span class="proctor-live"><i></i> Proctoring active</span><span id="proctor-device-state">Cam + Mic</span></div><div class="proctor-meter"><i id="proctor-meter-bar"></i></div>';
+      document.body.appendChild(dock);
+      const video=document.getElementById('proctor-video');video.srcObject=proctorStream;
+      if(status){status.textContent='Camera and microphone connected.';status.className='success'}
+      proctorStream.getVideoTracks().forEach(t=>{t.onended=()=>report('camera_disconnected','Camera was disconnected.');t.onmute=()=>report('camera_muted','Camera feed was interrupted.')});
+      proctorStream.getAudioTracks().forEach(t=>{t.onended=()=>report('microphone_disconnected','Microphone was disconnected.');t.onmute=()=>report('microphone_muted','Microphone feed was interrupted.')});
+      try{
+        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+        const source=audioCtx.createMediaStreamSource(proctorStream),an=audioCtx.createAnalyser();an.fftSize=256;source.connect(an);
+        const data=new Uint8Array(an.frequencyBinCount),bar=document.getElementById('proctor-meter-bar');
+        const pulse=()=>{if(closed||!audioCtx)return;an.getByteFrequencyData(data);let sum=0;for(const v of data)sum+=v;const avg=sum/data.length;const pct=Math.max(6,Math.min(100,avg*1.8));if(bar)bar.style.width=pct+'%';audioFrame=requestAnimationFrame(pulse)};pulse();
+      }catch{}
+      return true;
+    }catch(e){
+      if(status){status.textContent='Camera and microphone access is required for this secure exam.';status.className='error'}
+      report('proctor_permission_denied','Camera or microphone permission was denied.');
+      return false;
+    }
+  };
+
   const onVisibility=()=>{
     if(document.hidden){
       checkpoint();
@@ -565,6 +595,7 @@ async function exam(aid){
     E.innerHTML=
       '<div class="exam-watermark">'+h(studentLabel)+'</div>'+
       '<div id="integrity-warning" class="integrity-warning"></div>'+
+      '<div class="proctor-consent"><h3>Secure proctoring is active</h3><p class="mut">This exam requires camera, microphone and fullscreen access. The browser monitors whether these permissions remain active and records integrity incidents such as leaving the tab or disconnecting a device.</p><div class="proctor-checks"><span>● Camera required</span><span>● Microphone required</span><span>● Fullscreen monitored</span></div><div id="proctor-consent-status" class="mut">Preparing proctoring…</div><button id="proctor-retry" class="btn alt sm" type="button">Reconnect camera & mic</button></div>'+
       '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
       (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
       '<form id="xaf" class="card exam-paper">'+
@@ -572,6 +603,7 @@ async function exam(aid){
       '<button class="btn" type="submit">Submit exam</button></form>';
 
     document.getElementById('fsbtn').onclick=ensureFullscreen;
+    document.getElementById('proctor-retry').onclick=startProctor;
     restoreEmergencyDrafts();
 
     document.querySelectorAll('[data-q]').forEach(el=>{
@@ -606,6 +638,7 @@ async function exam(aid){
   };
 
   draw();
+  await startProctor();
   tick();
   timerHandle=setInterval(tick,1000);
   autosaveHandle=setInterval(checkpoint,60000);
