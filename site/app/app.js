@@ -101,25 +101,7 @@ function login(){
       document.getElementById('forgot').onclick=()=>modal('<div class="neo-auth-head"><span class="neo-kicker">PASSWORD RESET</span><h3>Reset your password</h3></div><form id="fpf" class="stack"><label class="field">Registered email<input name="email" type="email" required></label><button class="neo-btn">Send reset link</button><div id="fpe" class="error"></div><div id="fpok" class="success"></div></form>',()=>document.getElementById('fpf').onsubmit=async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));try{const d=await publicApi('/auth/forgot-password',{method:'POST',body:JSON.stringify(o)});document.getElementById('fpok').textContent=d.message||'If the email exists, a reset link has been sent.'}catch(x){document.getElementById('fpe').textContent=x.message}});
     });
 
-  const openRegister=()=>modal(`
-    <div class="neo-auth-head"><span class="neo-kicker">NEW CANDIDATE</span><h3>Create your exam account</h3><p>No class assignment required. Use your own email address.</p></div>
-    <form id="regf" class="stack neo-auth-form">
-      <div class="neo-form-grid">
-        <label class="field">First name<input name="first_name" required></label>
-        <label class="field">Last name<input name="last_name" required></label>
-      </div>
-      <label class="field">Email<input name="email" type="email" autocomplete="email" required></label>
-      <label class="field">Create password<input name="password" type="password" minlength="12" required></label>
-      <label class="field">Confirm password<input name="confirm_password" type="password" minlength="12" required></label>
-      <div class="mut auth-help">Minimum 12 characters with uppercase, lowercase and a number.</div>
-      <button class="neo-btn big">Create account</button>
-      <div id="re" class="error"></div><div id="rok" class="success"></div>
-    </form>`,()=>document.getElementById('regf').onsubmit=async e=>{
-      e.preventDefault();const o=Object.fromEntries(new FormData(e.target));const er=document.getElementById('re'),ok=document.getElementById('rok');er.textContent='';ok.textContent='';
-      if(o.password!==o.confirm_password){er.textContent='Passwords do not match.';return}
-      delete o.confirm_password;
-      try{const d=await publicApi('/student/register',{method:'POST',body:JSON.stringify(o)});ok.textContent=d.message||'Account created. Check your email, then sign in.';e.target.reset()}catch(x){er.textContent=x.message}
-    });
+  const openRegister=()=>{location.href='/app/register.html'};
 
   document.getElementById('signin-open').onclick=openSignIn;
   document.getElementById('register-open').onclick=openRegister;
