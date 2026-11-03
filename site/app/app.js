@@ -161,62 +161,7 @@ function render(){
   document.getElementById('logout').onclick=async()=>{try{await api('/logout',{method:'POST',body:'{}'})}finally{sessionStorage.removeItem('rb_session');state={me:null,csrf:null,view:'dashboard',data:{},token:'',setupRequired:false,config:state.config||{classes:[]}};login()}};
   loadView();
 }
-function examCategory(x){
-  const t=((x?.title||'')+' '+(x?.subject||'')+' '+(x?.exam_type||'')).toLowerCase();
-  if(t.includes('ielts'))return 'IELTS';
-  if(t.includes('math')&&t.includes('olympiad'))return 'Math Olympiad';
-  if(t.includes('english')&&t.includes('olympiad'))return 'English Olympiad';
-  if(t.includes('olympiad'))return 'Olympiad';
-  if(t.includes('placement')||/\b(a1|a2|b1|b2|c1|c2)\b/i.test(x?.title||''))return 'Placement';
-  if(t.includes('term'))return 'Term Exam';
-  return x?.subject||'Exam';
-}
-function examGroup(x){
-  const t=(x?.title||'').toLowerCase();
-  if(t.includes('junior'))return 'Junior';
-  if(t.includes('senior'))return 'Senior';
-  if(t.includes('primary'))return 'Primary';
-  if(t.includes('advanced'))return 'Advanced';
-  if(t.includes('elementary'))return 'Foundation';
-  return x?.grade?'Level '+x.grade:'Open level';
-}
-function examCard(x){
-  const cat=examCategory(x),resume=x.attempt_status==='IN_PROGRESS';
-  return '<article class="neo-exam-card" data-category="'+h(cat)+'"><div class="neo-exam-accent"></div><div class="neo-card-top"><span class="neo-chip">'+h(cat)+'</span><span class="neo-muted">'+h(examGroup(x))+'</span></div><h3>'+h(x.title)+'</h3><div class="neo-exam-meta"><span>◷ '+h(x.duration_min)+' min</span><span>◎ '+h(x.subject||cat)+'</span></div><div class="neo-exam-foot"><span>'+(resume?'Attempt in progress':'Ready when you are')+'</span><button class="neo-btn start" data-id="'+x.id+'">'+(resume?'Resume':'Start exam')+'</button></div></article>';
-}
-function bindExamStart(b){
-  b.onclick=async()=>{
-    const card=b.closest('.neo-exam-card')||b.closest('.card');
-    const title=card?.querySelector('h3')?.textContent||'this exam';
-    const isResume=b.textContent.trim().toLowerCase().includes('resume');
-    const msg=isResume?'You already have this exam in progress. The timer has continued running. Resume now?':'Before you begin, make sure you are ready. The timer starts immediately, autosave stays active, and secure exams may require camera, microphone and fullscreen access. Continue?';
-    if(!confirm(msg))return;
-    const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
-    exam(d.attempt_id);
-  }
-}
-async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){
-  if(state.me.role==='student'){
-    const [es,rs]=await Promise.all([api('/student/exams'),api('/student/results')]);
-    const published=rs.filter(x=>x.results_published);
-    const best=published.length?Math.max(...published.map(x=>Number(x.percentage||0))):0;
-    const categories=[...new Set(es.map(examCategory))];
-    P.innerHTML='<section class="neo-dashboard-hero"><div><span class="neo-kicker">YOUR EXAM CENTER</span><h1>Ready for your next challenge?</h1><p>Browse available exams, continue an attempt, or review your latest results.</p></div><button class="neo-btn big" id="discover-now">Explore exams</button></section>'+
-      '<section class="neo-stat-grid"><article><small>Available exams</small><strong>'+es.length+'</strong><span>Across '+categories.length+' categories</span></article><article><small>Completed</small><strong>'+published.length+'</strong><span>Released results</span></article><article><small>Best score</small><strong>'+Math.round(best)+'%</strong><span>Your personal best</span></article></section>'+
-      '<section class="neo-section"><div class="neo-section-head compact"><div><span class="neo-kicker">RECOMMENDED</span><h2>Continue with an exam</h2></div><button class="neo-link" id="view-all-exams">View all →</button></div><div class="neo-exam-grid">'+(es.slice(0,4).map(examCard).join('')||'<div class="neo-empty">No exams are available yet.</div>')+'</div></section>';
-    document.getElementById('discover-now').onclick=()=>{state.view='student-exams';render()};
-    document.getElementById('view-all-exams').onclick=()=>{state.view='student-exams';render()};
-    document.querySelectorAll('.start').forEach(bindExamStart);
-  }else{
-    const d=await api('/dashboard');
-    const stats=Object.entries(d);
-    P.innerHTML='<section class="neo-dashboard-hero admin"><div><span class="neo-kicker">EXAM OPERATIONS</span><h1>Run assessments, not classrooms.</h1><p>Create exams, manage question banks, review submissions and publish results from one focused console.</p></div><button class="neo-btn big" id="admin-new-exam">Create exam</button></section>'+
-      '<section class="neo-stat-grid">'+stats.slice(0,4).map(([k,v])=>'<article><small>'+h(k.replaceAll('_',' '))+'</small><strong>'+h(v)+'</strong><span>Live platform metric</span></article>').join('')+'</section>'+
-      '<section class="neo-admin-actions"><button data-go="exams"><span>▣</span><b>Manage exams</b><small>Create, schedule and organize categories</small></button><button data-go="questions"><span>?</span><b>Question bank</b><small>Build reusable assessment items</small></button><button data-go="marking"><span>✓</span><b>Submissions</b><small>Mark written responses and publish</small></button></section>';
-    document.getElementById('admin-new-exam').onclick=()=>{state.view='exams';render()};
-    document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>{state.view=x.dataset.go;render()});
-  }
-}
+async function loadView(){const P=document.getElementById('page');P.innerHTML='<div class="card">Loading…</div>';try{if(state.view==='dashboard'){const d=await api('/dashboard');let quote='';if(state.me.role==='student'){const quotes=[{src:'/app/motivation/motivation-1.webp?v=20261006-originalhq3',alt:'Small steps every day lead to big results.'},{src:'/app/motivation/motivation-2.webp?v=20261006-originalhq3',alt:"Believe you can, and you're halfway there."},{src:'/app/motivation/motivation-3.webp?v=20261006-originalhq3',alt:'Success begins with the courage to try.'},{src:'/app/motivation/motivation-4.webp?v=20261006-originalhq3',alt:'Dream big, work hard, stay focused.'},{src:'/app/motivation/motivation-5.webp?v=20261006-originalhq3',alt:'Mistakes are proof that you are learning.'}];let qi=Number(localStorage.getItem('rb_quote_image_index')||'-1');qi=(qi+1)%quotes.length;localStorage.setItem('rb_quote_image_index',String(qi));const q=quotes[qi];quote='<div class="card motivation-card"><img src="'+q.src+'" alt="'+h(q.alt)+'"></div>';}P.innerHTML='<div class="grid">'+Object.entries(d).map(([k,v])=>'<div class="card metric"><div class="mut">'+h(k.replaceAll('_',' '))+'</div><b>'+h(v)+'</b></div>').join('')+'</div>'+quote}
 else if(state.view==='classes'){const [cs,ss]=await Promise.all([api('/classes'),api('/subjects')]);P.innerHTML='<div class="grid"><div class="card"><h3 class="section-title">Classes</h3><form id="cf" class="row"><input name="name" placeholder="10A" required><input name="grade" type="number" min="1" max="11" placeholder="Grade" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+cs.map(x=>'<tr><td>'+h(x.name)+'</td><td>Grade '+h(x.grade)+'</td></tr>').join('')+'</tbody></table></div><div class="card"><h3 class="section-title">Subjects</h3><form id="sf" class="row"><input name="name" placeholder="Mathematics" required><button class="btn sm">Add</button></form><table class="table"><tbody>'+ss.map(x=>'<tr><td>'+h(x.name)+'</td></tr>').join('')+'</tbody></table></div></div>';document.getElementById('cf').onsubmit=e=>submitForm(e,'/classes');document.getElementById('sf').onsubmit=e=>submitForm(e,'/subjects')}
 else if(state.view==='users'){const rows=await api('/users');P.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h3 class="section-title">School users</h3><button id="nu" class="btn sm">New user</button></div><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+h(x.first_name+' '+x.last_name)+'</td><td>'+h(x.email)+'</td><td>'+h(x.role)+'</td><td>'+h(x.status)+'</td></tr>').join('')+'</tbody></table></div>';document.getElementById('nu').onclick=()=>modal('<h3>New user</h3><form id="uf" class="stack"><label class="field">First name<input name="first_name" required></label><label class="field">Last name<input name="last_name" required></label><label class="field">Email<input name="email" type="email" required></label><label class="field">Role<select name="role"><option>student</option><option>teacher</option><option>academic_admin</option></select></label><label class="field">Temporary password<input name="password" type="password" required></label><button class="btn">Create</button></form>',()=>document.getElementById('uf').onsubmit=e=>submitForm(e,'/users',true))}
 else if(state.view==='questions'){const [qs,ss]=await Promise.all([api('/questions'),api('/subjects')]);P.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h3 class="section-title">Question bank</h3><button id="nq" class="btn sm">New question</button></div><table class="table"><thead><tr><th>Question</th><th>Subject</th><th>Grade</th><th>Type</th></tr></thead><tbody>'+qs.map(x=>'<tr><td>'+h(x.text)+'</td><td>'+h(x.subject)+'</td><td>'+h(x.grade)+'</td><td>'+h(x.type)+'</td></tr>').join('')+'</tbody></table></div>';document.getElementById('nq').onclick=()=>modal('<h3>New question</h3><form id="qf" class="stack"><label class="field">Subject<select name="subject_id">'+ss.map(s=>'<option value="'+s.id+'">'+h(s.name)+'</option>').join('')+'</select></label><label class="field">Grade<input name="grade" type="number" min="1" max="11" value="9"></label><label class="field">Question<textarea name="text" required></textarea></label><label class="field">Type<select name="type"><option value="mcq">Multiple choice</option><option value="truefalse">True/False</option><option value="short">Short answer</option><option value="numeric">Numeric</option></select></label><label class="field">Options (comma separated for MCQ)<input name="options"></label><label class="field">Correct answer<input name="correct" required></label><label class="field">Difficulty<select name="difficulty"><option>easy</option><option selected>medium</option><option>hard</option><option>olympiad</option></select></label><label class="field">Marks<input name="marks" type="number" min=".25" step=".25" value="1"></label><button class="btn">Save question</button></form>',()=>document.getElementById('qf').onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));if(f.type==='mcq')f.options=f.options.split(',').map(x=>x.trim()).filter(Boolean);if(f.type==='multi')f.correct=f.correct.split(',').map(x=>x.trim());if(f.type==='short')f.correct=[f.correct];if(f.type==='numeric')f.correct={value:Number(f.correct),tolerance:0};await api('/questions',{method:'POST',body:JSON.stringify(f)});closeModal();loadView()})}
@@ -230,50 +175,40 @@ else if(state.view==='marking'){
   document.querySelectorAll('.open-marking').forEach(b=>b.onclick=()=>openMarking(Number(b.dataset.id)));
 }
 else if(state.view==='term-exams'){await showPublicTermExams(true);return}
-else if(state.view==='student-exams'){
-  const es=await api('/student/exams');
-  const cats=['All',...new Set(es.map(examCategory))];
-  P.innerHTML='<section class="neo-section-head"><div><span class="neo-kicker">EXAM LIBRARY</span><h2>Explore exams</h2></div><p>Choose an exam category and level, then begin when you are ready.</p></section>'+
-    '<div class="neo-filter-row">'+cats.map((x,i)=>'<button class="neo-filter '+(i===0?'active':'')+'" data-filter="'+h(x)+'">'+h(x)+'</button>').join('')+'</div>'+
-    '<div class="neo-exam-grid" id="exam-grid">'+(es.map(examCard).join('')||'<div class="neo-empty">No exams are available yet.</div>')+'</div>';
-  document.querySelectorAll('.start').forEach(bindExamStart);
-  document.querySelectorAll('.neo-filter').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.neo-filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.neo-exam-card').forEach(card=>card.hidden=btn.dataset.filter!=='All'&&card.dataset.category!==btn.dataset.filter)});
-}
-else if(state.view==='student-results'){const rs=await api('/student/results');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Exam</th><th>Score</th><th>%</th><th>Status</th><th></th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(x.title)+'</td><td>'+(x.results_published?h(x.score+'/'+x.total):'Not released')+'</td><td>'+(x.results_published?h(x.percentage):'—')+'</td><td>'+h(x.results_publishelse if(state.view==='student-results'){
-  const rs=await api('/student/results');
-  P.innerHTML='<section class="neo-section-head"><div><span class="neo-kicker">PERFORMANCE</span><h2>Your results</h2></div><p>Released scores and detailed answer reviews.</p></section>'+
-    '<div class="neo-result-grid">'+(rs.length?rs.map(x=>'<article class="neo-result-card"><div class="neo-card-top"><span class="neo-chip">'+h(examCategory(x))+'</span><span class="neo-muted">'+h(x.results_published?'Released':'Pending')+'</span></div><h3>'+h(x.title)+'</h3><div class="neo-score-ring '+(x.passed?'pass':'')+'"><strong>'+(x.results_published?Math.round(Number(x.percentage||0)):'—')+'</strong><span>'+(x.results_published?'%':'')+'</span></div><div class="neo-result-foot"><span>'+(x.results_published?h(x.score+'/'+x.total)+' marks':'Awaiting release')+'</span>'+(x.results_published?'<button class="neo-link review-result" data-id="'+x.id+'">Review answers →</button>':'')+'</div></article>').join(''):'<div class="neo-empty">You do not have released results yet.</div>')+'</div>';
-  document.querySelectorAll('.review-result').forEach(b=>b.onclick=async()=>{const d=await api('/student/attempts/'+b.dataset.id+'/result');const fmt=v=>Array.isArray(v)?v.join(', '):(v===null||v===undefined||v===''?'—':String(v));modal('<div class="neo-auth-head"><span class="neo-kicker">RESULT REVIEW</span><h3>'+h(d.title)+'</h3><p>'+h(d.score+'/'+d.total)+' · '+h(d.percentage)+'% · '+h(d.passed?'Pass':'Below pass mark')+'</p></div><div class="review-list">'+d.questions.map(q=>'<div class="review-item '+(q.is_correct===true?'correct':q.is_correct===false?'incorrect':'')+'"><div><b>Question '+h(q.number)+'</b></div><div class="mut">'+h(q.text||'')+'</div><div>Your answer: <b>'+h(fmt(q.answer))+'</b></div><div>Correct answer: <b>'+h(fmt(q.correct))+'</b></div><div>Marks: '+h(q.marks_awarded)+'</div></div>').join('')+'</div>')});
-}
-else if(state.view==='certificates'){
-  const rs=(await api('/student/results')).filter(x=>x.results_published&&x.passed);
-  P.innerHTML='<section class="neo-section-head"><div><span class="neo-kicker">ACHIEVEMENTS</span><h2>Certificates</h2></div><p>Download a certificate for every successfully completed eligible exam.</p></section><div class="neo-cert-grid">'+(rs.length?rs.map(x=>'<article class="neo-cert-card"><div class="neo-cert-mark">R</div><div><span class="neo-kicker">CERTIFICATE OF ACHIEVEMENT</span><h3>'+h(x.title)+'</h3><p>'+h(state.me.first_name+' '+state.me.last_name)+' · '+Math.round(Number(x.percentage||0))+'%</p></div><button class="neo-btn cert-download" data-id="'+x.id+'" data-title="'+h(x.title)+'" data-score="'+h(x.percentage)+'">Open certificate</button></article>').join(''):'<div class="neo-empty">Pass an exam to unlock a certificate.</div>')+'</div>';
-  document.querySelectorAll('.cert-download').forEach(b=>b.onclick=()=>openCertificate(b.dataset.title,b.dataset.score));
-}
+else if(state.view==='student-exams'){const es=await api('/student/exams');P.innerHTML='<div class="stack">'+(es.length?es.map(x=>'<div class="card"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · '+h(x.duration_min)+' min</div></div><button class="btn start" data-id="'+x.id+'">'+(x.attempt_status==='IN_PROGRESS'?'Resume':'Start')+'</button></div></div>').join(''):'<div class="card">No assigned exams are available.</div>')+'</div>';document.querySelectorAll('.start').forEach(b=>b.onclick=async()=>{
+  const card=b.closest('.card');
+  const title=card?.querySelector('h3')?.textContent||'this exam';
+  const isResume=b.textContent.trim().toLowerCase()==='resume';
+  const msg=isResume
+    ? 'You already have an exam in progress. The timer has continued running since you first started.\n\nContinue '+title+' now?'
+    : 'Are you ready to begin '+title+'?\n\nOnce you continue, the timer starts immediately and will keep running even if you close the page, lose power, or disconnect from the internet. Your work will be autosaved.\n\nChoose OK to continue or Cancel if you are not ready.';
+  if(!confirm(msg))return;
+  try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch{}
+  const d=await api('/student/exams/'+b.dataset.id+'/start',{method:'POST',body:'{}'});
+  exam(d.attempt_id);
+})}
+else if(state.view==='student-results'){const rs=await api('/student/results');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Exam</th><th>Score</th><th>%</th><th>Status</th><th></th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(x.title)+'</td><td>'+(x.results_published?h(x.score+'/'+x.total):'Not released')+'</td><td>'+(x.results_published?h(x.percentage):'—')+'</td><td>'+h(x.results_published?(x.passed?'Pass':'Below pass mark'):'Pending')+'</td><td>'+(x.results_published?'<button class="btn sm review-result" data-id="'+x.id+'">Review answers</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';document.querySelectorAll('.review-result').forEach(b=>b.onclick=async()=>{const d=await api('/student/attempts/'+b.dataset.id+'/result');const fmt=v=>Array.isArray(v)?v.join(', '):(v===null||v===undefined||v===''?'—':String(v));modal('<h3>'+h(d.title)+'</h3><div class="result-summary"><b>'+h(d.score+'/'+d.total)+'</b> · '+h(d.percentage)+'% · '+h(d.passed?'Pass':'Below pass mark')+'</div><div class="review-list">'+d.questions.map(q=>'<div class="review-item '+(q.is_correct===true?'correct':q.is_correct===false?'incorrect':'')+'"><div><b>Question '+h(q.number)+'</b></div><div class="mut">'+h(q.text||'')+'</div><div>Your answer: <b>'+h(fmt(q.answer))+'</b></div><div>Correct answer: <b>'+h(fmt(q.correct))+'</b></div><div>Marks: '+h(q.marks_awarded)+'</div></div>').join('')+'</div>')})}
 else if(state.view==='audit'){const rs=await api('/audit');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(new Date(x.at).toLocaleString())+'</td><td>'+h(x.user_label||'')+'</td><td>'+h(x.action)+'</td><td>'+h((x.entity||'')+' '+(x.entity_id||''))+'</td></tr>').join('')+'</tbody></table></div>'}}catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}}
 
-function openCertificate(title,score){
-  const name=state.me.first_name+' '+state.me.last_name;
-  const w=window.open('','_blank','noopener,noreferrer');
-  if(!w)return alert('Please allow pop-ups to open the certificate.');
-  w.document.write('<!doctype html><html><head><title>Certificate</title><style>body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f1ea;color:#102636}.sheet{width:1120px;min-height:760px;margin:32px auto;background:#fff;border:1px solid #d9d1c5;padding:70px;box-sizing:border-box;position:relative}.bar{height:10px;background:#b51e33;position:absolute;left:0;right:0;top:0}.brand{font-size:18px;letter-spacing:.12em;text-transform:uppercase}.title{font:700 64px Georgia,serif;margin:90px 0 15px}.name{font:italic 48px Georgia,serif;color:#b51e33;margin:26px 0}.exam{font-size:26px}.score{margin-top:34px;font-size:22px}.foot{position:absolute;left:70px;right:70px;bottom:65px;display:flex;justify-content:space-between;border-top:1px solid #ddd;padding-top:18px}@media print{body{background:#fff}.sheet{margin:0;border:0}}</style></head><body><div class="sheet"><div class="bar"></div><div class="brand">Redbridge International School · Exam Platform</div><div class="title">Certificate of Achievement</div><p>This certifies that</p><div class="name">'+h(name)+'</div><p>successfully completed</p><div class="exam">'+h(title)+'</div><div class="score">Final score: <b>'+Math.round(Number(score||0))+'%</b></div><div class="foot"><span>Redbridge Exam Platform</span><span>'+new Date().toLocaleDateString()+'</span></div></div><script>window.onload=()=>window.print()<\/script></body></html>');
-  w.document.close();
-}
 async function openTermExamChooser(){
   try{
+    if(!(state.config?.classes||[]).length)state.config=await publicApi('/config');
     const rows=await publicApi('/term-exams');
-    if(!rows.length){alert('No Term Exams are open at the moment.');return}
+    const classes=(state.config?.classes||[]);
     const subjects=[...new Set(rows.map(x=>x.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-    const groups=[...new Set(rows.map(examGroup))].sort((a,b)=>a.localeCompare(b));
+    if(!rows.length){alert('No Term Exams are open at the moment.');return}
     modal(
-      '<div class="neo-auth-head"><span class="neo-kicker">TERM EXAMS</span><h3>Find your exam</h3><p>No account is required. Choose the subject and group.</p></div>'+
+      '<h3>Term Exams</h3><p class="mut">Choose your class and subject. No account or registration is required.</p>'+
       '<form id="term-filter-form" class="stack">'+
+      '<label class="field">Class<select name="class_id" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+x.id+'" data-grade="'+x.grade+'" data-name="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>'+
       '<label class="field">Subject<select name="subject" required><option value="">Select subject</option>'+subjects.map(s=>'<option value="'+h(s)+'">'+h(s)+'</option>').join('')+'</select></label>'+
-      '<label class="field">Group<select name="group" required><option value="">Select group</option>'+groups.map(g=>'<option value="'+h(g)+'">'+h(g)+'</option>').join('')+'</select></label>'+
-      '<button class="neo-btn">Show available Term Exams</button><div id="term-filter-error" class="error"></div></form>',
+      '<button class="btn">Show available Term Exams</button><div id="term-filter-error" class="error"></div></form>',
       ()=>document.getElementById('term-filter-form').onsubmit=e=>{
-        e.preventDefault();const fd=new FormData(e.target);
-        closeModal();showPublicTermExams(false,{subject:String(fd.get('subject')||''),group:String(fd.get('group')||'')});
+        e.preventDefault();
+        const fd=new FormData(e.target),sel=e.target.querySelector('[name="class_id"]'),opt=sel.options[sel.selectedIndex];
+        const className=opt?.dataset?.name||opt?.text||'',grade=Number(opt?.dataset?.grade||0),subject=String(fd.get('subject')||'');
+        closeModal();
+        showPublicTermExams(false,{className,grade,subject});
       }
     );
   }catch(e){alert(e.message||'Could not load Term Exams.')}
@@ -294,18 +229,18 @@ async function showPublicTermExams(inShell=false,filters=null){
     if(!(state.config?.classes||[]).length)state.config=await api('/config');
     let rows=await publicApi('/term-exams');
     if(filters){
-      rows=rows.filter(x=>(!filters.subject||x.subject===filters.subject)&&(!filters.group||examGroup(x)===filters.group));
+      rows=rows.filter(x=>(!filters.grade||Number(x.grade)===Number(filters.grade))&&(!filters.subject||x.subject===filters.subject));
     }
     const resumeId=sessionStorage.getItem('rb_term_attempt');
     const resumeToken=sessionStorage.getItem('rb_term_token');
     const resume=resumeId&&resumeToken?'<div class="card term-resume-card"><div><b>Unfinished Term Exam</b><div class="mut">Your timer has continued running. Resume only if this is your current exam.</div></div><button class="btn" id="resume-term-exam">Resume</button></div>':'';
-    const filterHead=filters?'<div class="card term-filter-summary"><b>'+h(filters.group)+' · '+h(filters.subject)+'</b><div class="mut">Available Term Exams for your selection</div><button id="change-term-filter" class="btn alt sm" type="button">Change class / subject</button></div>':'';
+    const filterHead=filters?'<div class="card term-filter-summary"><b>'+h(filters.className)+' · '+h(filters.subject)+'</b><div class="mut">Available Term Exams for your selection</div><button id="change-term-filter" class="btn alt sm" type="button">Change class / subject</button></div>':'';
     mount.innerHTML=resume+filterHead+'<div class="stack">'+(rows.length?rows.map(x=>'<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><div><h3 style="margin:0">'+h(x.title)+'</h3><div class="mut">'+h(x.subject)+' · Grade '+h(x.grade)+' · '+h(x.duration_min)+' min</div></div><button class="btn public-term-start" data-id="'+x.id+'" data-title="'+h(x.title)+'">Take exam</button></div></div>').join(''):'<div class="card">No Term Exams are open for this class and subject.</div>')+'</div>';
     if(filters&&document.getElementById('change-term-filter'))document.getElementById('change-term-filter').onclick=()=>openTermExamChooser();
     if(resumeId&&resumeToken&&document.getElementById('resume-term-exam'))document.getElementById('resume-term-exam').onclick=()=>termExam(Number(resumeId),resumeToken);
     document.querySelectorAll('.public-term-start').forEach(btn=>btn.onclick=()=>{
       const classes=(state.config?.classes||[]);
-      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your name exactly as it should appear on the submission.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label><label class="field">Group<input name="class_name" value="'+h(filters?.group||examGroup({title:btn.dataset.title}))+'" readonly></label><button class="neo-btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
+      modal('<h3>'+h(btn.dataset.title)+'</h3><p class="mut">Enter your name exactly as it appears on the school list.</p><form id="term-start-form" class="stack"><label class="field">Full name<input name="student_name" required maxlength="160" autocomplete="name"></label>'+(filters?'<label class="field">Class<input name="class_name" value="'+h(filters.className)+'" readonly></label>':'<label class="field">Class<select name="class_name" required><option value="">Select class</option>'+classes.map(x=>'<option value="'+h(x.name)+'">'+h(x.name)+'</option>').join('')+'</select></label>')+'<button class="btn">Continue to exam</button><div id="term-start-error" class="error"></div></form>',()=>document.getElementById('term-start-form').onsubmit=async e=>{
         e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
         if(!confirm('Ready to begin? Once you continue, the timer starts immediately and continues even if the page is closed.'))return;
         try{
@@ -406,7 +341,7 @@ async function exam(aid){
 
   const deadline=new Date(d.deadline_at).getTime();
   const serverOffset=new Date(d.server_now).getTime()-Date.now();
-  let timerHandle=null,autosaveHandle=null,closed=false,lastViolationAt=0,violations=0,proctorStream=null,audioCtx=null,audioFrame=null;
+  let timerHandle=null,autosaveHandle=null,closed=false,lastViolationAt=0,violations=0;
   const saveTimers=new Map();
   const questionMap=new Map(d.questions.map(q=>[String(q.id),q]));
   const studentLabel=(state.me.first_name+' '+state.me.last_name+' · '+state.me.email+' · Attempt '+aid);
@@ -426,16 +361,12 @@ async function exam(aid){
     document.removeEventListener('cut',blockClipboard);
     document.removeEventListener('paste',blockClipboard);
     document.removeEventListener('keydown',onKey);
-    if(audioFrame)cancelAnimationFrame(audioFrame);
-    if(audioCtx){try{audioCtx.close()}catch{}audioCtx=null}
-    if(proctorStream){proctorStream.getTracks().forEach(t=>t.stop());proctorStream=null}
   };
 
   const finishToResults=()=>{
     cleanup();
     d.questions.forEach(q=>localStorage.removeItem(draftKey(q.id)));
     document.title='Redbridge Exam Platform';
-    document.getElementById('proctor-dock')?.remove();
     state.view='student-results';
     render();
   };
@@ -513,32 +444,6 @@ async function exam(aid){
     }catch{}
   };
 
-  const startProctor=async()=>{
-    const status=document.getElementById('proctor-consent-status');
-    if(status)status.textContent='Requesting camera and microphone…';
-    try{
-      proctorStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:400}},audio:true});
-      const dock=document.createElement('div');dock.className='proctor-dock';dock.id='proctor-dock';
-      dock.innerHTML='<video id="proctor-video" autoplay muted playsinline></video><div class="proctor-row"><span class="proctor-live"><i></i> Proctoring active</span><span id="proctor-device-state">Cam + Mic</span></div><div class="proctor-meter"><i id="proctor-meter-bar"></i></div>';
-      document.body.appendChild(dock);
-      const video=document.getElementById('proctor-video');video.srcObject=proctorStream;
-      if(status){status.textContent='Camera and microphone connected.';status.className='success'}
-      proctorStream.getVideoTracks().forEach(t=>{t.onended=()=>report('camera_disconnected','Camera was disconnected.');t.onmute=()=>report('camera_muted','Camera feed was interrupted.')});
-      proctorStream.getAudioTracks().forEach(t=>{t.onended=()=>report('microphone_disconnected','Microphone was disconnected.');t.onmute=()=>report('microphone_muted','Microphone feed was interrupted.')});
-      try{
-        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-        const source=audioCtx.createMediaStreamSource(proctorStream),an=audioCtx.createAnalyser();an.fftSize=256;source.connect(an);
-        const data=new Uint8Array(an.frequencyBinCount),bar=document.getElementById('proctor-meter-bar');
-        const pulse=()=>{if(closed||!audioCtx)return;an.getByteFrequencyData(data);let sum=0;for(const v of data)sum+=v;const avg=sum/data.length;const pct=Math.max(6,Math.min(100,avg*1.8));if(bar)bar.style.width=pct+'%';audioFrame=requestAnimationFrame(pulse)};pulse();
-      }catch{}
-      return true;
-    }catch(e){
-      if(status){status.textContent='Camera and microphone access is required for this secure exam.';status.className='error'}
-      report('proctor_permission_denied','Camera or microphone permission was denied.');
-      return false;
-    }
-  };
-
   const onVisibility=()=>{
     if(document.hidden){
       checkpoint();
@@ -591,7 +496,6 @@ async function exam(aid){
     E.innerHTML=
       '<div class="exam-watermark">'+h(studentLabel)+'</div>'+
       '<div id="integrity-warning" class="integrity-warning"></div>'+
-      '<div class="proctor-consent"><h3>Secure proctoring is active</h3><p class="mut">This exam requires camera, microphone and fullscreen access. The browser monitors whether these permissions remain active and records integrity incidents such as leaving the tab or disconnecting a device.</p><div class="proctor-checks"><span>● Camera required</span><span>● Microphone required</span><span>● Fullscreen monitored</span></div><div id="proctor-consent-status" class="mut">Preparing proctoring…</div><button id="proctor-retry" class="btn alt sm" type="button">Reconnect camera & mic</button></div>'+
       '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
       (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
       '<form id="xaf" class="card exam-paper">'+
@@ -599,7 +503,6 @@ async function exam(aid){
       '<button class="btn" type="submit">Submit exam</button></form>';
 
     document.getElementById('fsbtn').onclick=ensureFullscreen;
-    document.getElementById('proctor-retry').onclick=startProctor;
     restoreEmergencyDrafts();
 
     document.querySelectorAll('[data-q]').forEach(el=>{
@@ -634,7 +537,6 @@ async function exam(aid){
   };
 
   draw();
-  await startProctor();
   tick();
   timerHandle=setInterval(tick,1000);
   autosaveHandle=setInterval(checkpoint,60000);
