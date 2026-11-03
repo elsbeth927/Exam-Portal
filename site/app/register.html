@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Create Candidate Account · Redbridge Exam Platform</title>
+  <meta name="theme-color" content="#102431">
+  <link rel="icon" href="/app/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app/app.css?v=20261103-register1">
+</head>
+<body>
+  <div class="register-page">
+    <header class="register-topbar">
+      <button class="neo-brand" id="back-home" type="button" aria-label="Return to exam platform">
+        <img src="/app/redbridge-logo.svg" alt="Redbridge International School">
+        <span>Exam Platform</span>
+      </button>
+      <button class="neo-btn ghost" id="signin-link" type="button">Back to sign in</button>
+    </header>
+
+    <main class="register-shell">
+      <section class="register-intro">
+        <span class="neo-kicker">CANDIDATE REGISTRATION</span>
+        <h1>Create your exam account.</h1>
+        <p>One account gives you access to available exams, results and certificates. No class selection is required.</p>
+        <div class="register-points">
+          <span>✓ Browse available exams</span>
+          <span>✓ Resume timed attempts</span>
+          <span>✓ View released results</span>
+          <span>✓ Access certificates</span>
+        </div>
+      </section>
+
+      <section class="register-card">
+        <div class="neo-auth-head">
+          <span class="neo-kicker">NEW CANDIDATE</span>
+          <h2>Your details</h2>
+          <p>Use your own email address. You may be asked to verify it before signing in.</p>
+        </div>
+        <form id="register-form" class="stack neo-auth-form">
+          <div class="neo-form-grid">
+            <label class="field">First name
+              <input name="first_name" autocomplete="given-name" required>
+            </label>
+            <label class="field">Last name
+              <input name="last_name" autocomplete="family-name" required>
+            </label>
+          </div>
+          <label class="field">Email
+            <input name="email" type="email" autocomplete="email" required>
+          </label>
+          <label class="field">Create password
+            <input name="password" type="password" minlength="12" autocomplete="new-password" required>
+          </label>
+          <label class="field">Confirm password
+            <input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required>
+          </label>
+          <div class="mut auth-help">Minimum 12 characters with uppercase, lowercase and a number.</div>
+          <button class="neo-btn big" id="create-account-btn" type="submit">Create account</button>
+          <div id="register-error" class="error" role="alert"></div>
+          <div id="register-success" class="success" role="status"></div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+<script>
+const api=async(path,opt={})=>{
+  const r=await fetch('/api'+path,{...opt,headers:{'content-type':'application/json',...(opt.headers||{})},credentials:'same-origin'});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||d.message||'Request failed');
+  return d;
+};
+document.getElementById('back-home').onclick=()=>location.href='/app/';
+document.getElementById('signin-link').onclick=()=>location.href='/app/';
+document.getElementById('register-form').onsubmit=async e=>{
+  e.preventDefault();
+  const form=e.currentTarget;
+  const data=Object.fromEntries(new FormData(form));
+  const err=document.getElementById('register-error');
+  const ok=document.getElementById('register-success');
+  const btn=document.getElementById('create-account-btn');
+  err.textContent=''; ok.textContent='';
+  if(data.password!==data.confirm_password){err.textContent='Passwords do not match.';return}
+  delete data.confirm_password;
+  btn.disabled=true; btn.textContent='Creating account…';
+  try{
+    const d=await api('/student/register',{method:'POST',body:JSON.stringify(data)});
+    ok.textContent=d.message||'Account created successfully. You can now sign in.';
+    form.reset();
+    setTimeout(()=>location.href='/app/',1800);
+  }catch(x){
+    err.textContent=x.message;
+  }finally{
+    btn.disabled=false; btn.textContent='Create account';
+  }
+};
+</script>
+</body>
+</html>
