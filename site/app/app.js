@@ -389,35 +389,35 @@ function commonCertificateFields(cert,name,issued,qr){
   const examSize=certExamSize(exam);
   const common={
     ENGLISH:{
-      name:{x:380,y:526,w:735,h:100,font:nameSize},
-      exam:{x:281,y:817,w:227,h:53,font:examSize,text:exam},
-      metric:{x:533,y:817,w:112,h:53,font:24,text:score},
-      date:{x:669,y:817,w:220,h:53,font:20,text:issued},
-      ref:{x:915,y:817,w:319,h:53,font:17,text:cert.reference_no},
+      name:{x:350,y:510,w:790,h:126,font:nameSize},
+      exam:{x:282,y:820,w:226,h:46,font:Math.min(examSize,14),text:exam},
+      metric:{x:534,y:820,w:111,h:46,font:24,text:score},
+      date:{x:670,y:820,w:219,h:46,font:18,text:issued},
+      ref:{x:916,y:820,w:318,h:46,font:16,text:cert.reference_no},
       qr:{x:1246,y:744,w:143,h:143}
     },
     SCIENCE:{
-      name:{x:388,y:505,w:720,h:98,font:nameSize},
-      exam:{x:310,y:790,w:228,h:53,font:examSize,text:exam},
-      metric:{x:551,y:790,w:116,h:53,font:24,text:score},
-      date:{x:683,y:790,w:223,h:53,font:20,text:issued},
-      ref:{x:922,y:790,w:309,h:53,font:17,text:cert.reference_no},
+      name:{x:355,y:493,w:785,h:123,font:nameSize},
+      exam:{x:311,y:795,w:227,h:43,font:Math.min(examSize,14),text:exam},
+      metric:{x:552,y:795,w:115,h:43,font:24,text:score},
+      date:{x:684,y:795,w:222,h:43,font:18,text:issued},
+      ref:{x:923,y:795,w:308,h:43,font:16,text:cert.reference_no},
       qr:{x:1246,y:707,w:143,h:143}
     },
     MATH:{
-      name:{x:389,y:515,w:720,h:98,font:nameSize},
-      exam:{x:342,y:781,w:226,h:53,font:examSize,text:exam},
-      metric:{x:581,y:781,w:111,h:53,font:24,text:score},
-      date:{x:708,y:781,w:214,h:53,font:20,text:issued},
-      ref:{x:938,y:781,w:302,h:53,font:17,text:cert.reference_no},
+      name:{x:355,y:503,w:790,h:123,font:nameSize},
+      exam:{x:343,y:786,w:225,h:43,font:Math.min(examSize,14),text:exam},
+      metric:{x:582,y:786,w:110,h:43,font:24,text:score},
+      date:{x:709,y:786,w:213,h:43,font:18,text:issued},
+      ref:{x:939,y:786,w:301,h:43,font:16,text:cert.reference_no},
       qr:{x:1253,y:716,w:143,h:143}
     },
     OLYMPIAD:{
-      name:{x:384,y:565,w:730,h:98,font:nameSize},
-      exam:{x:333,y:822,w:205,h:52,font:examSize,text:level},
-      metric:{x:548,y:822,w:172,h:52,font:18,text:award},
-      date:{x:734,y:822,w:205,h:52,font:20,text:issued},
-      ref:{x:950,y:822,w:300,h:52,font:17,text:cert.reference_no},
+      name:{x:345,y:550,w:805,h:125,font:nameSize},
+      exam:{x:334,y:825,w:204,h:44,font:Math.min(examSize,14),text:level},
+      metric:{x:549,y:825,w:171,h:44,font:17,text:award},
+      date:{x:735,y:825,w:204,h:44,font:18,text:issued},
+      ref:{x:951,y:825,w:299,h:44,font:16,text:cert.reference_no},
       qr:{x:1248,y:742,w:143,h:143},
       examLine:{x:397,y:731,w:680,h:32,font:15,text:exam}
     }
@@ -437,14 +437,14 @@ function ieltsCertificateFields(cert,name,issued,qr){
   };
   const exam=cert.title||meta.exam_title||'IELTS Practice Assessment';
   return {
-    name:{x:430,y:417,w:625,h:83,font:certNameSize(name)},
+    name:{x:400,y:408,w:690,h:100,font:certNameSize(name)},
     listening:{x:348,y:691,w:137,h:68,font:31,text:String(vals.listening)},
     reading:{x:533,y:691,w:137,h:68,font:31,text:String(vals.reading)},
     writing:{x:718,y:691,w:137,h:68,font:31,text:String(vals.writing)},
     speaking:{x:900,y:691,w:137,h:68,font:31,text:String(vals.speaking)},
     overall:{x:1067,y:662,w:175,h:92,font:36,text:String(vals.overall)},
-    date:{x:464,y:822,w:265,h:45,font:18,text:issued},
-    ref:{x:769,y:822,w:374,h:45,font:17,text:cert.reference_no},
+    date:{x:465,y:825,w:264,h:39,font:18,text:issued},
+    ref:{x:770,y:825,w:373,h:39,font:16,text:cert.reference_no},
     qr:{x:1249,y:785,w:143,h:143},
     examLine:{x:420,y:542,w:675,h:30,font:15,text:exam}
   };
@@ -478,7 +478,7 @@ function openCertificate(cert){
   const w=window.open('','_blank');
   if(!w){alert('Please allow pop-ups to open the certificate.');return}
   const html='<!doctype html><html><head><meta charset="utf-8"><title>'+h(cert.reference_no)+'</title><style>'+
-    '*{box-sizing:border-box}html,body{margin:0;background:#dfe3e5;font-family:Arial,sans-serif}.toolbar{width:1491px;max-width:96vw;margin:14px auto 0;display:flex;justify-content:flex-end;gap:8px}.toolbar button{border:0;border-radius:10px;background:#102b3d;color:white;padding:10px 16px;font-weight:800;cursor:pointer}.cert-wrap{position:relative;width:1491px;height:1055px;max-width:96vw;aspect-ratio:1491/1055;margin:12px auto 30px;box-shadow:0 22px 65px rgba(0,0,0,.22);overflow:hidden;background:#fff}.cert-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}.cert-name-field,.cert-value-field,.cert-exam-line{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;color:#0a203f}.cert-name-field{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;line-height:1;background:rgba(255,247,229,.97);border-radius:38px;box-shadow:0 0 22px 15px rgba(255,247,229,.97)}.cert-value-field{font-family:Georgia,"Times New Roman",serif;font-weight:800;line-height:1.05;background:#fff3d9;border-radius:7px;padding:2px 7px}.cert-exam-line{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;background:rgba(255,247,229,.94);border-radius:10px;padding:2px 10px}.cert-qr-field{position:absolute;z-index:4;background:#fff;display:flex;align-items:center;justify-content:center}.cert-qr-field img{width:100%;height:100%;display:block}.cert-wrap{transform-origin:top left}@media(max-width:1491px){.cert-wrap{transform:scale(calc((96vw)/1491));margin-bottom:calc((1055px * (96vw/1491)) - 1055px)}}@media print{html,body{background:#fff}.toolbar{display:none}.cert-wrap{margin:0;box-shadow:none;max-width:none;transform:none!important}@page{size:A4 landscape;margin:0}}</style></head><body>'+
+    '*{box-sizing:border-box}html,body{margin:0;background:#dfe3e5;font-family:Arial,sans-serif}.toolbar{width:1491px;max-width:96vw;margin:14px auto 0;display:flex;justify-content:flex-end;gap:8px}.toolbar button{border:0;border-radius:10px;background:#102b3d;color:white;padding:10px 16px;font-weight:800;cursor:pointer}.cert-wrap{position:relative;width:1491px;height:1055px;max-width:96vw;aspect-ratio:1491/1055;margin:12px auto 30px;box-shadow:0 22px 65px rgba(0,0,0,.22);overflow:hidden;background:#fff}.cert-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}.cert-name-field,.cert-value-field,.cert-exam-line{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;color:#0a203f}.cert-name-field{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;line-height:1;background:linear-gradient(90deg,rgba(252,244,232,0),rgba(252,244,232,.995) 8%,rgba(252,244,232,.995) 92%,rgba(252,244,232,0));border-radius:48px}.cert-value-field{font-family:Georgia,"Times New Roman",serif;font-weight:800;line-height:1.05;background:#fdf2e1;border-radius:4px;padding:2px 6px;overflow:hidden;white-space:normal}.cert-exam-line{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;background:rgba(252,244,232,.93);border-radius:10px;padding:2px 10px}.cert-qr-field{position:absolute;z-index:4;background:#fff;display:flex;align-items:center;justify-content:center}.cert-qr-field img{width:100%;height:100%;display:block}.cert-wrap{transform-origin:top left}@media(max-width:1491px){.cert-wrap{transform:scale(calc((96vw)/1491));margin-bottom:calc((1055px * (96vw/1491)) - 1055px)}}@media print{html,body{background:#fff}.toolbar{display:none}.cert-wrap{margin:0;box-shadow:none;max-width:none;transform:none!important}@page{size:A4 landscape;margin:0}}</style></head><body>'+
     '<div class="toolbar"><button onclick="window.print()">Print / Save PDF</button></div>'+
     '<div class="cert-wrap"><img class="cert-bg" src="'+template+'" alt="'+h(certLabel(cert.certificate_type))+'">'+overlays+'</div></body></html>';
   w.document.open();w.document.write(html);w.document.close();
