@@ -348,19 +348,9 @@ else if(state.view==='certificates'){
 }
 else if(state.view==='audit'){const rs=await api('/audit');P.innerHTML='<div class="card"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>'+rs.map(x=>'<tr><td>'+h(new Date(x.at).toLocaleString())+'</td><td>'+h(x.user_label||'')+'</td><td>'+h(x.action)+'</td><td>'+h((x.entity||'')+' '+(x.entity_id||''))+'</td></tr>').join('')+'</tbody></table></div>'}}catch(e){P.innerHTML='<div class="card error">'+h(e.message)+'</div>'}}
 
-function certIcon(type){return ({IELTS:'I',SCIENCE:'S',OLYMPIAD:'★',ENGLISH:'E',MATH:'π',GENERAL:'R'})[type]||'R'}
-function certLabel(type){return ({IELTS:'IELTS PRACTICE CERTIFICATE',SCIENCE:'SCIENCE CERTIFICATE',OLYMPIAD:'OLYMPIAD AWARD',ENGLISH:'ENGLISH CERTIFICATE',MATH:'MATHEMATICS CERTIFICATE',GENERAL:'CERTIFICATE OF ACHIEVEMENT'})[type]||'CERTIFICATE OF ACHIEVEMENT'}
 
 function certIcon(type){return ({IELTS:'I',SCIENCE:'S',OLYMPIAD:'★',ENGLISH:'E',MATH:'π',GENERAL:'R'})[type]||'R'}
 function certLabel(type){return ({IELTS:'IELTS PRACTICE ASSESSMENT',SCIENCE:'SCIENCE ASSESSMENT',OLYMPIAD:'ACADEMIC OLYMPIAD AWARD',ENGLISH:'ENGLISH LANGUAGE ASSESSMENT',MATH:'MATHEMATICS ASSESSMENT',GENERAL:'ACADEMIC ASSESSMENT'})[type]||'ACADEMIC ASSESSMENT'}
-function certTheme(type){
-  if(type==='SCIENCE')return {primary:'#045841',secondary:'#0a7d61',ribbon:'#064b3a',title:'Certificate of Achievement',subtitle:'Science Assessment',motif:'science'};
-  if(type==='OLYMPIAD')return {primary:'#4a1c62',secondary:'#7a2e99',ribbon:'#45165c',title:'Certificate of Excellence',subtitle:'Academic Olympiad Award',motif:'olympiad'};
-  if(type==='ENGLISH')return {primary:'#0d2e59',secondary:'#254d7a',ribbon:'#11365f',title:'Certificate of Achievement',subtitle:'English Language Assessment',motif:'english'};
-  if(type==='MATH')return {primary:'#0e3559',secondary:'#008f98',ribbon:'#11365d',title:'Certificate of Achievement',subtitle:'Mathematics Assessment',motif:'math'};
-  if(type==='IELTS')return {primary:'#092b5b',secondary:'#a60e2d',ribbon:'#0b2f62',title:'Certificate of Performance',subtitle:'IELTS Practice Assessment',motif:'ielts'};
-  return {primary:'#123653',secondary:'#b51e33',ribbon:'#123653',title:'Certificate of Achievement',subtitle:'Academic Assessment',motif:'general'};
-}
 function certAward(cert){
   const p=Number(cert.percentage||0);
   if(cert.certificate_type==='OLYMPIAD'){
@@ -371,49 +361,127 @@ function certAward(cert){
   }
   return Math.round(p)+'%';
 }
-function certDecor(type){
-  if(type==='ENGLISH')return '<div class="decor left-books"><span>English</span><span>Literature</span><span>Writing</span><span>Grammar</span><span>Vocabulary</span></div><div class="decor quill">✒</div><div class="decor landmark">♜</div>';
-  if(type==='MATH')return '<div class="decor formulas f1">a² + b² = c²</div><div class="decor formulas f2">x = (−b ± √(b²−4ac)) / 2a</div><div class="decor formulas f3">∫ x² dx = x³/3 + C</div><div class="decor mathbooks"><span>Mathematics</span><span>Algebra</span><span>Geometry</span><span>Statistics</span></div><div class="decor compass">◯</div>';
-  if(type==='SCIENCE')return '<div class="decor dna">⌁⌁⌁</div><div class="decor sciencebooks"><span>SCIENCE</span></div><div class="decor microscope">⚗</div><div class="decor atom">⚛</div><div class="decor leaf">❧</div>';
-  if(type==='OLYMPIAD')return '<div class="decor trophy">🏆</div><div class="decor stars">★ ★ ★</div><div class="decor olybooks"><span>English</span><span>Mathematics</span><span>Science</span></div><div class="decor medal">🏅</div>';
-  if(type==='IELTS')return '<div class="decor ieltsbooks"><span>IELTS</span><span>Academic Skills</span><span>English Proficiency</span><span>Test Practice</span></div><div class="decor globe">◎</div><div class="decor ielts-icons"><span>🎧<small>Listening</small></span><span>▤<small>Reading</small></span><span>✎<small>Writing</small></span><span>◌<small>Speaking</small></span></div>';
-  return '';
+function certificateTemplate(type){
+  const map={
+    IELTS:'/app/certificates/templates/ielts-template.jpg',
+    SCIENCE:'/app/certificates/templates/science-template.jpg',
+    OLYMPIAD:'/app/certificates/templates/olympiad-template.jpg',
+    ENGLISH:'/app/certificates/templates/english-template.jpg',
+    MATH:'/app/certificates/templates/math-template.jpg'
+  };
+  return map[type]||map.ENGLISH;
+}
+function certNameSize(name){
+  const n=String(name||'').length;
+  return n>30?46:n>24?52:n>18?58:66;
+}
+function certExamSize(title){
+  const n=String(title||'').length;
+  return n>42?13:n>30?15:n>22?17:20;
+}
+function commonCertificateFields(cert,name,issued,qr){
+  const type=cert.certificate_type;
+  const exam=cert.title||cert.metadata?.exam_title||cert.subject||'Redbridge Assessment';
+  const score=Math.round(Number(cert.percentage||0))+'%';
+  const award=certAward(cert);
+  const level=cert.group_label||cert.module||exam;
+  const nameSize=certNameSize(name);
+  const examSize=certExamSize(exam);
+  const common={
+    ENGLISH:{
+      name:{x:380,y:526,w:735,h:100,font:nameSize},
+      exam:{x:281,y:817,w:227,h:53,font:examSize,text:exam},
+      metric:{x:533,y:817,w:112,h:53,font:24,text:score},
+      date:{x:669,y:817,w:220,h:53,font:20,text:issued},
+      ref:{x:915,y:817,w:319,h:53,font:17,text:cert.reference_no},
+      qr:{x:1246,y:744,w:143,h:143}
+    },
+    SCIENCE:{
+      name:{x:388,y:505,w:720,h:98,font:nameSize},
+      exam:{x:310,y:790,w:228,h:53,font:examSize,text:exam},
+      metric:{x:551,y:790,w:116,h:53,font:24,text:score},
+      date:{x:683,y:790,w:223,h:53,font:20,text:issued},
+      ref:{x:922,y:790,w:309,h:53,font:17,text:cert.reference_no},
+      qr:{x:1246,y:707,w:143,h:143}
+    },
+    MATH:{
+      name:{x:389,y:515,w:720,h:98,font:nameSize},
+      exam:{x:342,y:781,w:226,h:53,font:examSize,text:exam},
+      metric:{x:581,y:781,w:111,h:53,font:24,text:score},
+      date:{x:708,y:781,w:214,h:53,font:20,text:issued},
+      ref:{x:938,y:781,w:302,h:53,font:17,text:cert.reference_no},
+      qr:{x:1253,y:716,w:143,h:143}
+    },
+    OLYMPIAD:{
+      name:{x:384,y:565,w:730,h:98,font:nameSize},
+      exam:{x:333,y:822,w:205,h:52,font:examSize,text:level},
+      metric:{x:548,y:822,w:172,h:52,font:18,text:award},
+      date:{x:734,y:822,w:205,h:52,font:20,text:issued},
+      ref:{x:950,y:822,w:300,h:52,font:17,text:cert.reference_no},
+      qr:{x:1248,y:742,w:143,h:143},
+      examLine:{x:397,y:731,w:680,h:32,font:15,text:exam}
+    }
+  };
+  return common[type]||common.ENGLISH;
+}
+function ieltsCertificateFields(cert,name,issued,qr){
+  const meta=cert.metadata||{};
+  const skill=String(cert.skill||meta.skill||'').toLowerCase();
+  const pct=Math.round(Number(cert.percentage||meta.percentage||0));
+  const vals={
+    listening:meta.listening_band??meta.listening??(skill==='listening'?pct+'%':'—'),
+    reading:meta.reading_band??meta.reading??(skill==='reading'?pct+'%':'—'),
+    writing:meta.writing_band??meta.writing??(skill==='writing'?pct+'%':'—'),
+    speaking:meta.speaking_band??meta.speaking??(skill==='speaking'?pct+'%':'—'),
+    overall:meta.overall_band??meta.overallBand??(skill==='full mock'?pct+'%':'—')
+  };
+  const exam=cert.title||meta.exam_title||'IELTS Practice Assessment';
+  return {
+    name:{x:430,y:417,w:625,h:83,font:certNameSize(name)},
+    listening:{x:348,y:691,w:137,h:68,font:31,text:String(vals.listening)},
+    reading:{x:533,y:691,w:137,h:68,font:31,text:String(vals.reading)},
+    writing:{x:718,y:691,w:137,h:68,font:31,text:String(vals.writing)},
+    speaking:{x:900,y:691,w:137,h:68,font:31,text:String(vals.speaking)},
+    overall:{x:1067,y:662,w:175,h:92,font:36,text:String(vals.overall)},
+    date:{x:464,y:822,w:265,h:45,font:18,text:issued},
+    ref:{x:769,y:822,w:374,h:45,font:17,text:cert.reference_no},
+    qr:{x:1249,y:785,w:143,h:143},
+    examLine:{x:420,y:542,w:675,h:30,font:15,text:exam}
+  };
+}
+function certificateOverlayHTML(field,key,kind='value'){
+  if(!field)return '';
+  const cls=kind==='name'?'cert-name-field':kind==='qr'?'cert-qr-field':kind==='examline'?'cert-exam-line':'cert-value-field';
+  const style='left:'+field.x+'px;top:'+field.y+'px;width:'+field.w+'px;height:'+field.h+'px;'+(field.font?'font-size:'+field.font+'px;':'');
+  if(kind==='qr')return '<div class="'+cls+'" style="'+style+'"><img src="'+field.src+'" alt="Certificate verification QR"></div>';
+  return '<div class="'+cls+'" style="'+style+'">'+h(field.text??'')+'</div>';
 }
 function openCertificate(cert){
-  const name=state.me.first_name+' '+state.me.last_name;
-  const t=certTheme(cert.certificate_type);
+  const name=(state.me.first_name+' '+state.me.last_name).trim();
   const issued=new Date(cert.issued_at).toLocaleDateString('en-GB',{timeZone:'Asia/Tashkent',day:'2-digit',month:'long',year:'numeric'});
   const verifyUrl=location.origin+'/app/verify.html?ref='+encodeURIComponent(cert.reference_no)+'&token='+encodeURIComponent(cert.verification_token);
-  const qr='https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=0&data='+encodeURIComponent(verifyUrl);
-  const level=cert.group_label||cert.module||cert.subject||'Redbridge Assessment';
-  const score=Math.round(Number(cert.percentage||0));
-  const isIELTS=cert.certificate_type==='IELTS';
-  const isOlympiad=cert.certificate_type==='OLYMPIAD';
-  const descriptor=isIELTS
-    ?'for successfully completing the Redbridge IELTS practice assessment and demonstrating commendable English proficiency.'
-    :isOlympiad
-      ?'for outstanding achievement and excellent performance in the Redbridge Academic Olympiad competition.'
-      :'for successfully demonstrating strong '+(cert.certificate_type==='MATH'?'mathematical reasoning':cert.certificate_type==='SCIENCE'?'scientific understanding':cert.certificate_type==='ENGLISH'?'English language performance':'academic performance')+' and meeting the required academic standard in the Redbridge assessment.';
-  const metricLabel=isOlympiad?'Award':(isIELTS?'Overall Result':'Score');
-  const metricValue=isOlympiad?certAward(cert):(score+'%');
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data='+encodeURIComponent(verifyUrl);
+  const template=certificateTemplate(cert.certificate_type);
+  const fields=cert.certificate_type==='IELTS'?ieltsCertificateFields(cert,name,issued,qr):commonCertificateFields(cert,name,issued,qr);
+  fields.name.text=name; fields.qr.src=qr;
+
+  let overlays='';
+  overlays+=certificateOverlayHTML(fields.name,'name','name');
+  if(cert.certificate_type==='IELTS'){
+    for(const k of ['listening','reading','writing','speaking','overall','date','ref'])overlays+=certificateOverlayHTML(fields[k],k);
+  }else{
+    for(const k of ['exam','metric','date','ref'])overlays+=certificateOverlayHTML(fields[k],k);
+  }
+  if(fields.examLine)overlays+=certificateOverlayHTML(fields.examLine,'examLine','examline');
+  overlays+=certificateOverlayHTML(fields.qr,'qr','qr');
+
   const w=window.open('','_blank');
   if(!w){alert('Please allow pop-ups to open the certificate.');return}
   const html='<!doctype html><html><head><meta charset="utf-8"><title>'+h(cert.reference_no)+'</title><style>'+
-  '*{box-sizing:border-box}html,body{margin:0;padding:0;background:#dedede;color:#10233a}body{font-family:Georgia,"Times New Roman",serif}.actions{width:1440px;max-width:96vw;margin:14px auto 0;display:flex;justify-content:flex-end}.actions button{background:#102b3d;color:#fff;border:0;border-radius:10px;padding:10px 17px;font:700 14px Arial;cursor:pointer}.certificate{--primary:'+t.primary+';--secondary:'+t.secondary+';--ribbon:'+t.ribbon+';width:1440px;height:1018px;max-width:96vw;aspect-ratio:1.414/1;margin:12px auto 28px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#fffdf8 0,#fff8e9 62%,#f0dfbd 100%);border:16px solid var(--primary);box-shadow:0 22px 70px rgba(0,0,0,.22)}'+
-  '.certificate:before{content:"";position:absolute;inset:14px;border:3px solid #d6a22d;box-shadow:inset 0 0 0 4px #fff4cf,inset 0 0 0 8px #d6a22d;pointer-events:none}.certificate:after{content:"";position:absolute;left:-5%;right:-5%;bottom:-120px;height:260px;background:linear-gradient(165deg,var(--primary),var(--secondary) 55%,var(--primary));border-top:6px solid #d7ab3e;transform:skewY(-2deg);z-index:0}.corner{position:absolute;width:125px;height:125px;border-color:#e0b447;z-index:3}.c1{left:24px;top:24px;border-left:5px solid;border-top:5px solid;border-radius:24px 0 0 0}.c2{right:24px;top:24px;border-right:5px solid;border-top:5px solid;border-radius:0 24px 0 0}.c3{left:24px;bottom:24px;border-left:5px solid;border-bottom:5px solid;border-radius:0 0 0 24px}.c4{right:24px;bottom:24px;border-right:5px solid;border-bottom:5px solid;border-radius:0 0 24px 0}'+
-  '.school{position:relative;z-index:4;display:flex;justify-content:center;align-items:center;gap:18px;padding-top:34px}.school img{width:420px;height:120px;object-fit:contain;background:#fff;border-radius:10px;padding:6px}.school-text{display:none}.ribbon{position:relative;z-index:3;width:880px;height:130px;margin:18px auto 18px;background:linear-gradient(180deg,var(--secondary),var(--ribbon) 26%,var(--ribbon) 72%,#071b35);border:6px solid #d9ab3f;border-radius:60% 60% 22px 22px / 45% 45% 18px 18px;box-shadow:0 10px 20px rgba(0,0,0,.22),inset 0 3px 0 rgba(255,255,255,.2)}'+
-  '.ribbon:before,.ribbon:after{content:"";position:absolute;top:36px;width:150px;height:82px;background:var(--ribbon);border:5px solid #d9ab3f;z-index:-1}.ribbon:before{left:-112px;transform:skewX(-18deg) rotate(-5deg)}.ribbon:after{right:-112px;transform:skewX(18deg) rotate(5deg)}.ribbon h1{margin:0;color:#ffe9a4;text-shadow:0 4px 4px rgba(0,0,0,.5);font-size:60px;line-height:118px;font-style:italic;white-space:nowrap}.subtitle{position:relative;z-index:3;font-size:42px;font-weight:700;font-style:italic;margin:2px 0 17px;color:#10233a}.awardto{position:relative;z-index:3;font-size:23px;font-style:italic}.student{position:relative;z-index:3;font-size:68px;font-weight:700;font-style:italic;margin:8px auto 12px;max-width:980px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.flourish{position:relative;z-index:3;color:#cf971c;font-size:34px;line-height:20px}.desc{position:relative;z-index:3;width:820px;margin:20px auto 0;font-size:22px;line-height:1.35;font-style:italic}.facts{position:absolute;z-index:4;left:250px;right:210px;bottom:130px;display:grid;grid-template-columns:1.15fr .72fr 1fr 1.55fr;gap:10px}.fact{border:3px solid #d6a22d;border-radius:14px;background:#fff7e5;overflow:hidden;min-height:104px}.fact b{display:block;background:var(--primary);color:#fff;padding:10px 8px;font-size:18px;font-style:italic}.fact span{display:flex;min-height:56px;align-items:center;justify-content:center;padding:8px 10px;font:800 18px Arial,sans-serif;line-height:1.15}.qr{position:absolute;z-index:5;right:48px;bottom:102px;width:148px;text-align:center}.qr img{width:148px;height:148px;background:#fff;border:7px solid #fff;box-shadow:0 0 0 3px #d6a22d}.qr strong{display:block;margin-top:8px;font:800 14px Arial;color:#111}.issue-note{position:absolute;z-index:4;bottom:60px;left:250px;right:220px;text-align:center;font-size:13px;font-style:italic;color:#5d513d}.decor{position:absolute;z-index:1;color:var(--primary)}.left-books,.mathbooks,.sciencebooks,.olybooks,.ieltsbooks{left:28px;bottom:80px;display:grid;gap:0;transform:rotate(-1deg)}.left-books span,.mathbooks span,.sciencebooks span,.olybooks span,.ieltsbooks span{display:block;background:linear-gradient(180deg,var(--primary),#071c36);color:#f6d77e;border:2px solid #c99b2b;border-radius:6px;padding:9px 20px;min-width:175px;text-align:center;font:bold 18px Georgia;box-shadow:0 5px 8px rgba(0,0,0,.16)}.quill{left:190px;bottom:78px;font-size:120px;transform:rotate(-18deg);color:#c99324}.landmark{right:64px;top:350px;font-size:125px;opacity:.18}.formulas{font-size:24px;font-style:italic;opacity:.8}.f1{left:80px;top:120px}.f2{right:65px;top:120px}.f3{right:65px;top:600px}.compass{left:170px;bottom:40px;font-size:170px;opacity:.25}.dna{left:80px;top:105px;font-size:80px;transform:rotate(-32deg);opacity:.18}.microscope{left:65px;top:390px;font-size:145px}.atom{right:78px;top:270px;font-size:120px}.leaf{right:62px;bottom:140px;font-size:150px;opacity:.23}.trophy{left:50%;top:300px;transform:translateX(-50%);font-size:95px;opacity:.13}.stars{left:50%;top:385px;transform:translateX(-50%);font-size:25px;color:#d5a52a}.medal{left:168px;bottom:165px;font-size:100px}.globe{left:40px;top:340px;font-size:180px;opacity:.22}.ielts-icons{right:58px;top:330px;display:grid;grid-template-columns:repeat(2,96px);gap:12px}.ielts-icons span{display:grid;place-items:center;background:#fff7e5;border:2px solid #d4a22d;border-radius:18px;font-size:30px;padding:10px;box-shadow:0 6px 12px rgba(0,0,0,.1)}.ielts-icons small{font:700 12px Arial;color:#3f2a1d;margin-top:4px}@media print{body{background:#fff}.actions{display:none}.certificate{margin:0;box-shadow:none;max-width:none}@page{size:A4 landscape;margin:0}}</style></head><body>'+
-  '<div class="actions"><button onclick="window.print()">Print / Save PDF</button></div><section class="certificate">'+
-  '<i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>'+certDecor(cert.certificate_type)+
-  '<div class="school"><img src="/app/redbridge-logo.svg" alt="Redbridge International School"></div>'+
-  '<div class="ribbon"><h1>'+h(t.title)+'</h1></div>'+
-  '<div class="subtitle">'+h(t.subtitle)+'</div><div class="awardto">This certificate is proudly awarded to</div>'+
-  '<div class="student">'+h(name)+'</div><div class="flourish">— ✦ —</div><div class="desc">'+h(descriptor)+'</div>'+
-  '<div class="facts"><div class="fact"><b>'+(isOlympiad?'Competition Level':'Assessment Level')+'</b><span>'+h(level)+'</span></div><div class="fact"><b>'+h(metricLabel)+'</b><span>'+h(metricValue)+'</span></div><div class="fact"><b>Date Issued</b><span>'+h(issued)+'</span></div><div class="fact"><b>Reference No.</b><span>'+h(cert.reference_no)+'</span></div></div>'+
-  '<div class="qr"><img src="'+qr+'" alt="Verification QR"><strong>Scan to Verify</strong></div>'+
-  '<div class="issue-note">'+(isIELTS?'School-issued IELTS practice assessment certificate — not an official IELTS Test Report Form.':h(cert.title))+'</div>'+
-  '</section></body></html>';
-  w.document.write(html);w.document.close();
+    '*{box-sizing:border-box}html,body{margin:0;background:#dfe3e5;font-family:Arial,sans-serif}.toolbar{width:1491px;max-width:96vw;margin:14px auto 0;display:flex;justify-content:flex-end;gap:8px}.toolbar button{border:0;border-radius:10px;background:#102b3d;color:white;padding:10px 16px;font-weight:800;cursor:pointer}.cert-wrap{position:relative;width:1491px;height:1055px;max-width:96vw;aspect-ratio:1491/1055;margin:12px auto 30px;box-shadow:0 22px 65px rgba(0,0,0,.22);overflow:hidden;background:#fff}.cert-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}.cert-name-field,.cert-value-field,.cert-exam-line{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;color:#0a203f}.cert-name-field{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;line-height:1;background:rgba(255,247,229,.97);border-radius:38px;box-shadow:0 0 22px 15px rgba(255,247,229,.97)}.cert-value-field{font-family:Georgia,"Times New Roman",serif;font-weight:800;line-height:1.05;background:#fff3d9;border-radius:7px;padding:2px 7px}.cert-exam-line{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;background:rgba(255,247,229,.94);border-radius:10px;padding:2px 10px}.cert-qr-field{position:absolute;z-index:4;background:#fff;display:flex;align-items:center;justify-content:center}.cert-qr-field img{width:100%;height:100%;display:block}.cert-wrap{transform-origin:top left}@media(max-width:1491px){.cert-wrap{transform:scale(calc((96vw)/1491));margin-bottom:calc((1055px * (96vw/1491)) - 1055px)}}@media print{html,body{background:#fff}.toolbar{display:none}.cert-wrap{margin:0;box-shadow:none;max-width:none;transform:none!important}@page{size:A4 landscape;margin:0}}</style></head><body>'+
+    '<div class="toolbar"><button onclick="window.print()">Print / Save PDF</button></div>'+
+    '<div class="cert-wrap"><img class="cert-bg" src="'+template+'" alt="'+h(certLabel(cert.certificate_type))+'">'+overlays+'</div></body></html>';
+  w.document.open();w.document.write(html);w.document.close();
 }
 
 
