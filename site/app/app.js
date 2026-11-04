@@ -372,54 +372,76 @@ function certificateTemplate(type){
   return map[type]||map.ENGLISH;
 }
 function certNameSize(name){
-  const n=String(name||'').length;
-  return n>30?46:n>24?52:n>18?58:66;
+  const n=String(name||'').trim().length;
+  return n>32?34:n>26?38:n>20?42:n>14?45:48;
 }
 function certExamSize(title){
   const n=String(title||'').length;
-  return n>42?13:n>30?15:n>22?17:20;
+  return n>36?13:n>28?14:n>20?16:18;
+}
+function certificateSubject(cert){
+  const meta=cert.metadata||{};
+  const explicit=String(cert.subject||meta.subject||'').trim();
+  if(explicit)return explicit.replace(/\\s+Assessment$/i,'').trim();
+  return ({ENGLISH:'English',SCIENCE:'Science',MATH:'Mathematics',IELTS:'IELTS',OLYMPIAD:'Olympiad'})[cert.certificate_type]||'Academic';
+}
+function cleanCertificateLevel(cert,exam){
+  const meta=cert.metadata||{};
+  const subject=certificateSubject(cert);
+  const explicit=[meta.assessment_level,meta.grade_label,meta.cefr_level,meta.level,cert.assessment_level,cert.grade_label,cert.level,cert.group_label]
+    .map(v=>String(v??'').trim()).find(Boolean);
+  if(explicit){
+    const e=explicit.replace(/\\s+/g,' ').trim();
+    if(!/^Book\\s+\\d+/i.test(e)&&!/^Part\\s+[A-Z0-9]+/i.test(e)&&!/^Type\\s+\\d+/i.test(e))return e;
+  }
+  const source=[cert.title,meta.exam_title,exam].filter(Boolean).join(' ');
+  const cefr=source.match(/(?:^|[^A-Z0-9])(A1|A2|B1|B2|C1|C2)(?:[^A-Z0-9]|$)/i);
+  if(cefr&&cert.certificate_type==='ENGLISH')return cefr[1].toUpperCase()+' English';
+  const grade=source.match(/\\bGrade\\s*(\\d{1,2})\\b/i);
+  if(grade)return 'Grade '+grade[1]+' '+subject;
+  if(cert.certificate_type==='OLYMPIAD')return meta.competition_level||'School Olympiad';
+  return subject+' Assessment';
 }
 function commonCertificateFields(cert,name,issued,qr){
   const type=cert.certificate_type;
   const exam=cert.title||cert.metadata?.exam_title||cert.subject||'Redbridge Assessment';
   const score=Math.round(Number(cert.percentage||0))+'%';
   const award=certAward(cert);
-  const level=cert.group_label||cert.module||exam;
+  const level=cleanCertificateLevel(cert,exam);
   const nameSize=certNameSize(name);
-  const examSize=certExamSize(exam);
+  const levelSize=certExamSize(level);
   const common={
     ENGLISH:{
-      name:{x:350,y:510,w:790,h:126,font:nameSize},
-      exam:{x:282,y:820,w:226,h:46,font:Math.min(examSize,14),text:exam},
-      metric:{x:534,y:820,w:111,h:46,font:24,text:score},
-      date:{x:670,y:820,w:219,h:46,font:18,text:issued},
-      ref:{x:916,y:820,w:318,h:46,font:16,text:cert.reference_no},
-      qr:{x:1246,y:744,w:143,h:143}
+      name:{x:390,y:520,w:720,h:90,font:nameSize},
+      exam:{x:292,y:838,w:216,h:44,font:levelSize,text:level},
+      metric:{x:538,y:838,w:107,h:44,font:24,text:score},
+      date:{x:676,y:838,w:214,h:44,font:18,text:issued},
+      ref:{x:926,y:838,w:307,h:44,font:14,text:cert.reference_no},
+      qr:{x:1281,y:766,w:137,h:137}
     },
     SCIENCE:{
-      name:{x:355,y:493,w:785,h:123,font:nameSize},
-      exam:{x:311,y:795,w:227,h:43,font:Math.min(examSize,14),text:exam},
-      metric:{x:552,y:795,w:115,h:43,font:24,text:score},
-      date:{x:684,y:795,w:222,h:43,font:18,text:issued},
-      ref:{x:923,y:795,w:308,h:43,font:16,text:cert.reference_no},
-      qr:{x:1246,y:707,w:143,h:143}
+      name:{x:390,y:500,w:720,h:88,font:nameSize},
+      exam:{x:322,y:804,w:210,h:44,font:levelSize,text:level},
+      metric:{x:557,y:804,w:109,h:44,font:24,text:score},
+      date:{x:694,y:804,w:208,h:44,font:18,text:issued},
+      ref:{x:932,y:804,w:301,h:44,font:14,text:cert.reference_no},
+      qr:{x:1274,y:731,w:140,h:140}
     },
     MATH:{
-      name:{x:355,y:503,w:790,h:123,font:nameSize},
-      exam:{x:343,y:786,w:225,h:43,font:Math.min(examSize,14),text:exam},
-      metric:{x:582,y:786,w:110,h:43,font:24,text:score},
-      date:{x:709,y:786,w:213,h:43,font:18,text:issued},
-      ref:{x:939,y:786,w:301,h:43,font:16,text:cert.reference_no},
-      qr:{x:1253,y:716,w:143,h:143}
+      name:{x:390,y:500,w:720,h:90,font:nameSize},
+      exam:{x:355,y:809,w:207,h:44,font:levelSize,text:level},
+      metric:{x:591,y:809,w:96,h:44,font:24,text:score},
+      date:{x:716,y:809,w:199,h:44,font:18,text:issued},
+      ref:{x:947,y:809,w:290,h:44,font:14,text:cert.reference_no},
+      qr:{x:1285,y:738,w:138,h:138}
     },
     OLYMPIAD:{
-      name:{x:345,y:550,w:805,h:125,font:nameSize},
-      exam:{x:334,y:825,w:204,h:44,font:Math.min(examSize,14),text:level},
-      metric:{x:549,y:825,w:171,h:44,font:17,text:award},
-      date:{x:735,y:825,w:204,h:44,font:18,text:issued},
-      ref:{x:951,y:825,w:299,h:44,font:16,text:cert.reference_no},
-      qr:{x:1248,y:742,w:143,h:143},
-      examLine:{x:397,y:731,w:680,h:32,font:15,text:exam}
+      name:{x:390,y:566,w:710,h:90,font:nameSize},
+      exam:{x:342,y:853,w:190,h:44,font:Math.min(levelSize,16),text:level},
+      metric:{x:556,y:853,w:163,h:44,font:17,text:award},
+      date:{x:744,y:853,w:192,h:44,font:18,text:issued},
+      ref:{x:961,y:853,w:280,h:44,font:14,text:cert.reference_no},
+      qr:{x:1280,y:764,w:140,h:140}
     }
   };
   return common[type]||common.ENGLISH;
@@ -435,18 +457,16 @@ function ieltsCertificateFields(cert,name,issued,qr){
     speaking:meta.speaking_band??meta.speaking??(skill==='speaking'?pct+'%':'—'),
     overall:meta.overall_band??meta.overallBand??(skill==='full mock'?pct+'%':'—')
   };
-  const exam=cert.title||meta.exam_title||'IELTS Practice Assessment';
   return {
-    name:{x:400,y:408,w:690,h:100,font:certNameSize(name)},
-    listening:{x:348,y:691,w:137,h:68,font:31,text:String(vals.listening)},
-    reading:{x:533,y:691,w:137,h:68,font:31,text:String(vals.reading)},
-    writing:{x:718,y:691,w:137,h:68,font:31,text:String(vals.writing)},
-    speaking:{x:900,y:691,w:137,h:68,font:31,text:String(vals.speaking)},
-    overall:{x:1067,y:662,w:175,h:92,font:36,text:String(vals.overall)},
-    date:{x:465,y:825,w:264,h:39,font:18,text:issued},
-    ref:{x:770,y:825,w:373,h:39,font:16,text:cert.reference_no},
-    qr:{x:1249,y:785,w:143,h:143},
-    examLine:{x:420,y:542,w:675,h:30,font:15,text:exam}
+    name:{x:420,y:415,w:650,h:80,font:certNameSize(name)},
+    listening:{x:360,y:713,w:133,h:55,font:31,text:String(vals.listening)},
+    reading:{x:544,y:713,w:133,h:55,font:31,text:String(vals.reading)},
+    writing:{x:728,y:713,w:133,h:55,font:31,text:String(vals.writing)},
+    speaking:{x:906,y:713,w:133,h:55,font:31,text:String(vals.speaking)},
+    overall:{x:1086,y:686,w:182,h:66,font:36,text:String(vals.overall)},
+    date:{x:468,y:828,w:260,h:46,font:18,text:issued},
+    ref:{x:778,y:828,w:363,h:46,font:14,text:cert.reference_no},
+    qr:{x:1287,y:806,w:126,h:126}
   };
 }
 function certificateOverlayHTML(field,key,kind='value'){
