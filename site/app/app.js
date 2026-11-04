@@ -363,11 +363,11 @@ function certAward(cert){
 }
 function certificateTemplate(type){
   const map={
-    IELTS:'/app/certificates/templates/ielts-template.jpg',
-    SCIENCE:'/app/certificates/templates/science-template.jpg',
-    OLYMPIAD:'/app/certificates/templates/olympiad-template.jpg',
-    ENGLISH:'/app/certificates/templates/english-template.jpg',
-    MATH:'/app/certificates/templates/math-template.jpg'
+    IELTS:'/app/certificates/templates/ielts-template.png',
+    SCIENCE:'/app/certificates/templates/science-template.png',
+    OLYMPIAD:'/app/certificates/templates/olympiad-template.png',
+    ENGLISH:'/app/certificates/templates/english-template.png',
+    MATH:'/app/certificates/templates/math-template.png'
   };
   return map[type]||map.ENGLISH;
 }
@@ -480,7 +480,7 @@ function openCertificate(cert){
   const html='<!doctype html><html><head><meta charset="utf-8"><title>'+h(cert.reference_no)+'</title><style>'+
     '*{box-sizing:border-box}html,body{margin:0;background:#dfe3e5;font-family:Arial,sans-serif}.toolbar{width:1491px;max-width:96vw;margin:14px auto 0;display:flex;justify-content:flex-end;gap:8px}.toolbar button{border:0;border-radius:10px;background:#102b3d;color:white;padding:10px 16px;font-weight:800;cursor:pointer}.cert-wrap{position:relative;width:1491px;height:1055px;max-width:96vw;aspect-ratio:1491/1055;margin:12px auto 30px;box-shadow:0 22px 65px rgba(0,0,0,.22);overflow:hidden;background:#fff}.cert-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}.cert-name-field,.cert-value-field,.cert-exam-line{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;color:#0a203f}.cert-name-field{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;line-height:1;background:transparent;border:0;border-radius:0}.cert-value-field{font-family:Georgia,"Times New Roman",serif;font-weight:800;line-height:1.05;background:transparent;border:0;border-radius:0;padding:0;overflow:hidden;white-space:normal}.cert-exam-line{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-style:italic;background:transparent;border:0;border-radius:0;padding:0}.cert-qr-field{position:absolute;z-index:4;background:#fff;display:flex;align-items:center;justify-content:center;padding:0}.cert-qr-field img{width:100%;height:100%;display:block}.cert-wrap{transform-origin:top left}@media(max-width:1491px){.cert-wrap{transform:scale(calc((96vw)/1491));margin-bottom:calc((1055px * (96vw/1491)) - 1055px)}}@media print{html,body{background:#fff}.toolbar{display:none}.cert-wrap{margin:0;box-shadow:none;max-width:none;transform:none!important}@page{size:A4 landscape;margin:0}}</style></head><body>'+
     '<div class="toolbar"><button onclick="window.print()">Print / Save PDF</button></div>'+
-    '<div class="cert-wrap"><img class="cert-bg" src="'+template+'" alt="'+h(certLabel(cert.certificate_type))+'">'+overlays+'</div></body></html>';
+    '<div class="cert-wrap"><img class="cert-bg" src="'+template+'" onerror="this.onerror=null;this.src=this.src.replace(/\\.png$/,\'.jpg\')" alt="'+h(certLabel(cert.certificate_type))+'">'+overlays+'</div></body></html>';
   w.document.open();w.document.write(html);w.document.close();
 }
 
