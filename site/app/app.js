@@ -250,14 +250,19 @@ async function loadView(){const P=document.getElementById('page');P.innerHTML='<
     document.getElementById('go-library').onclick=()=>{state.view='student-exams';render()};
     document.getElementById('go-library-2').onclick=()=>{state.view='student-exams';render()};
     document.getElementById('go-results').onclick=()=>{state.view='student-results';render()};
-    document.getElementById('go-library').onclick=()=>{state.view='student-exams';render()};
     document.querySelectorAll('.start').forEach(bindExamStart);
   }else{
     const d=await api('/dashboard');
     const stats=Object.entries(d);
-    P.innerHTML='<section class="neo-dashboard-hero admin"><div><span class="neo-kicker">EXAM OPERATIONS</span><h1>Run assessments, not classrooms.</h1><p>Create exams, manage question banks, review submissions and publish results from one focused console.</p></div><button class="neo-btn big" id="go-exams">Manage exams</button></section>'+
-      '<section class="neo-stat-grid">'+stats.slice(0,3).map(x=>'<article><small>'+h(String(x[0]).replaceAll('_',' '))+'</small><strong>'+h(x[1])+'</strong><span>Live platform metric</span></article>').join('')+'</section>'+
-      '<section class="neo-admin-actions"><button data-go="exams"><span>▣</span><b>Exams</b><small>Create and schedule assessments</small></button><button data-go="questions"><span>?</span><b>Question Bank</b><small>Build reusable questions</small></button><button data-go="marking"><span>✓</span><b>Submissions</b><small>Mark and publish results</small></button></section>';
+    const adminName=(state.me.first_name||'Administrator');
+    P.innerHTML=
+      '<section class="rb-admin-hero"><div><span class="neo-kicker">ACADEMIC OPERATIONS</span><p class="rb-admin-welcome">Good day, '+h(adminName)+'.</p><h1>Everything important, <em>in view.</em></h1><p>Plan assessments, manage content, review submissions and keep exam operations moving without losing context.</p></div><div class="rb-admin-command"><span>QUICK ACTION</span><h3>Create or schedule an assessment</h3><button class="neo-btn" id="go-exams">Open exam manager <b>→</b></button></div></section>'+
+      '<section class="rb-admin-metrics">'+stats.slice(0,4).map((x,i)=>'<article><span class="rb-admin-index">0'+(i+1)+'</span><small>'+h(String(x[0]).replaceAll('_',' '))+'</small><strong>'+h(x[1])+'</strong><i></i></article>').join('')+'</section>'+
+      '<section class="rb-admin-workspace"><div class="rb-admin-work-head"><div><span class="neo-kicker">WORKSPACE</span><h2>What needs your attention?</h2></div><p>Core assessment workflows, organised around the work rather than around system tables.</p></div><div class="rb-admin-action-grid">'+
+      '<button data-go="exams"><span class="rb-action-icon">01</span><div><b>Exam planning</b><small>Create, configure and schedule assessments.</small></div><i>↗</i></button>'+
+      '<button data-go="questions"><span class="rb-action-icon">02</span><div><b>Question bank</b><small>Build and maintain reusable assessment content.</small></div><i>↗</i></button>'+
+      '<button data-go="marking"><span class="rb-action-icon">03</span><div><b>Submissions</b><small>Review written work, mark and publish outcomes.</small></div><i>↗</i></button>'+
+      '</div></section>';
     document.getElementById('go-exams').onclick=()=>{state.view='exams';render()};
     document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>{state.view=x.dataset.go;render()});
   }
@@ -906,15 +911,28 @@ async function exam(aid){
     E.innerHTML=
       '<div class="exam-watermark">'+h(studentLabel)+'</div>'+
       '<div id="integrity-warning" class="integrity-warning"></div>'+
-      (proctored?'<div class="proctor-consent"><h3>Secure proctoring</h3><p class="mut">This exam requires camera, microphone and fullscreen monitoring. Click the button below so your browser can ask for permission.</p><div class="proctor-checks"><span>● Camera</span><span>● Microphone</span><span>● Fullscreen</span></div><div id="proctor-consent-status" class="mut">Permission has not been requested yet.</div><button id="proctor-retry" class="btn alt sm" type="button">Enable camera & microphone</button></div>':'')+
-      (proctored?'<div id="proctor-lock" class="proctor-lock"><b>Proctoring required</b><span>Enable camera and microphone to unlock the exam.</span></div>':'')+
-      '<div class="top exam-top"><div><h2 style="margin:0">'+h(d.exam.title)+'</h2><div class="mut">'+h(d.exam.instructions||'')+'</div><div class="integrity-status">'+(proctored?'Secure exam · Violations: <b id="violation-count">'+violations+'</b>/3':'Practice mode · proctoring off')+'</div><div id="autosave-status" class="autosave-status saved">Autosave active · checkpoint every 60 seconds</div></div><div><div class="timer" id="tm"></div><button id="fsbtn" class="btn alt sm" type="button">Fullscreen</button></div></div>'+
-      (d.exam.description?'<details class="card source-material" open><summary><b>Test paper / source material</b></summary><pre>'+h(d.exam.description)+'</pre></details>':'')+
-      '<form id="xaf" class="card exam-paper">'+
-      d.questions.map((q,i)=>'<div class="examq"><div class="exam-question-text"><b>'+(i+1)+'.</b> '+h(q.text).replaceAll('\\n','<br>')+'</div><div class="mut">'+h(q.marks)+' mark(s)'+(q.word_guidance?' · '+h(q.word_guidance):'')+'</div>'+answerHtml(q)+'</div>').join('')+
-      '<button class="btn" type="submit">Submit exam</button></form>';
+      '<header class="rb-exam-header"><div class="rb-exam-brand"><span>RB</span><div><b>Redbridge Exam</b><small>'+h(d.exam.title)+'</small></div></div><div class="rb-exam-status"><div id="autosave-status" class="autosave-status saved">Saved</div><span class="rb-status-dot"></span><small>'+(proctored?'Secure mode':'Practice mode')+'</small></div><div class="rb-exam-clock"><small>Time remaining</small><div class="timer" id="tm"></div><button id="fsbtn" class="rb-icon-btn" type="button" title="Fullscreen">⛶</button></div></header>'+
+      '<nav class="rb-question-nav"><div class="rb-question-nav-label"><span>Questions</span><small>'+d.questions.length+' total</small></div><div class="rb-question-numbers">'+d.questions.map((q,i)=>'<button type="button" data-jump="'+q.id+'" aria-label="Go to question '+(i+1)+'">'+(i+1)+'</button>').join('')+'</div></nav>'+
+      (proctored?'<section class="rb-proctor-setup proctor-consent"><div><span class="neo-kicker">SECURE SESSION</span><h3>Enable proctoring before you begin.</h3><p>Camera, microphone and fullscreen are required for this examination.</p></div><div class="proctor-checks"><span>Camera</span><span>Microphone</span><span>Fullscreen</span></div><div class="rb-proctor-action"><div id="proctor-consent-status" class="mut">Permission has not been requested yet.</div><button id="proctor-retry" class="neo-btn" type="button">Enable secure mode</button></div></section>':'')+
+      (proctored?'<div id="proctor-lock" class="proctor-lock"><b>Exam locked</b><span>Complete the secure-session check to begin.</span></div>':'')+
+      '<main class="rb-exam-layout">'+
+      (d.exam.description?'<aside class="rb-source-panel"><div class="rb-panel-label">SOURCE MATERIAL</div><div class="rb-source-scroll">'+h(d.exam.description).replaceAll('\\n','<br>')+'</div></aside>':'')+
+      '<form id="xaf" class="rb-question-paper '+(d.exam.description?'has-source':'')+'"><div class="rb-paper-intro"><div><span class="neo-kicker">ASSESSMENT</span><h1>'+h(d.exam.title)+'</h1><p>'+h(d.exam.instructions||'Answer every question carefully. Your work is saved automatically.')+'</p></div><div class="rb-integrity-pill">'+(proctored?'Integrity <b id="violation-count">'+violations+'</b>/3':'Practice')+'</div></div>'+
+      d.questions.map((q,i)=>'<section class="examq rb-question" id="q-'+q.id+'" data-question="'+q.id+'"><div class="rb-q-number">'+String(i+1).padStart(2,'0')+'</div><div class="rb-q-body"><div class="rb-q-meta"><span>'+h(q.marks)+' mark'+(Number(q.marks)===1?'':'s')+'</span>'+(q.word_guidance?'<span>'+h(q.word_guidance)+'</span>':'')+'</div><div class="exam-question-text">'+h(q.text).replaceAll('\\n','<br>')+'</div>'+answerHtml(q)+'</div></section>').join('')+
+      '<footer class="rb-exam-submit"><div><b>Finished?</b><small>Review your answers before final submission.</small></div><button class="neo-btn big" type="submit">Submit exam <span>→</span></button></footer></form></main>';
 
     document.getElementById('fsbtn').onclick=ensureFullscreen;
+    document.querySelectorAll('[data-jump]').forEach(btn=>btn.onclick=()=>{
+      const target=document.getElementById('q-'+btn.dataset.jump);
+      if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    const qObserver=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting)return;
+        document.querySelectorAll('[data-jump]').forEach(b=>b.classList.toggle('active',b.dataset.jump===entry.target.dataset.question));
+      });
+    },{rootMargin:'-25% 0px -60% 0px',threshold:.01});
+    document.querySelectorAll('.rb-question').forEach(q=>qObserver.observe(q));
     if(proctored){
       const form=document.getElementById('xaf');
       form.classList.add('exam-interaction-locked');
