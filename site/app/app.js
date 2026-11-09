@@ -160,7 +160,7 @@ function render(){
     <main class="neo-main">
       <header class="neo-topbar">
         <div><span class="neo-kicker">${admin?'ADMIN CONSOLE':'CANDIDATE PORTAL'}</span><h2>${h(items.find(x=>x[0]===state.view)?.[1]||'Exam Platform')}</h2></div>
-        <div class="neo-profile"><div><b>${h(state.me.first_name+' '+state.me.last_name)}</b><small>${h(state.me.email||state.me.role.replaceAll('_',' '))}</small></div><span>${h((state.me.first_name||'R').slice(0,1)+(state.me.last_name||'').slice(0,1))}</span></div>
+        ${admin?'<div class="neo-profile"><div><b>'+h(state.me.first_name+' '+state.me.last_name)+'</b><small>'+h(state.me.email||state.me.role.replaceAll('_',' '))+'</small></div><span>'+h((state.me.first_name||'R').slice(0,1)+(state.me.last_name||'').slice(0,1))+'</span></div>':''}
       </header>
       <div id="page" class="neo-page"></div>
     </main>
