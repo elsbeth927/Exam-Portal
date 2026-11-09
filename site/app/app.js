@@ -227,9 +227,29 @@ async function loadView(){const P=document.getElementById('page');P.innerHTML='<
     const rs=await api('/student/results');
     const released=rs.filter(x=>x.results_published);
     const best=released.length?Math.max(...released.map(x=>Number(x.percentage||0))):0;
-    P.innerHTML='<section class="neo-dashboard-hero"><div><span class="neo-kicker">YOUR EXAM CENTER</span><h1>Choose your next challenge.</h1><p>Browse available exams, resume an attempt, and keep your results and certificates in one place.</p></div><button class="neo-btn big" id="go-library">Explore exams</button></section>'+
-      '<section class="neo-stat-grid"><article><small>Available exams</small><strong>'+es.length+'</strong><span>Open in your catalog</span></article><article><small>Released results</small><strong>'+released.length+'</strong><span>Completed attempts</span></article><article><small>Best score</small><strong>'+Math.round(best)+'%</strong><span>Your personal best</span></article></section>'+
-      '<section class="neo-section"><div class="neo-section-head compact"><div><span class="neo-kicker">AVAILABLE NOW</span><h2>Start an exam</h2></div></div><div class="neo-exam-grid">'+(es.length?es.slice(0,4).map(examCard).join(''):'<div class="neo-empty">No exams are available yet.</div>')+'</div></section>';
+    const first=(state.me.first_name||'Candidate');
+    const inProgress=es.filter(x=>x.attempt_status==='IN_PROGRESS');
+    const heroExam=inProgress[0]||es[0]||null;
+    P.innerHTML=
+      '<section class="rb-student-hero">'+
+        '<div class="rb-hero-copy"><span class="neo-kicker">REDBRIDGE EXAM CENTER</span><div class="rb-hello">Welcome back, '+h(first)+'.</div><h1>Ready when <em>you are.</em></h1><p>Your exams, progress and verified achievements — in one focused workspace.</p><div class="rb-hero-actions"><button class="neo-btn big" id="go-library">Browse all exams</button><button class="rb-text-action" id="go-results">View results <span>↗</span></button></div></div>'+
+        '<div class="rb-focus-panel">'+
+          (heroExam?'<div class="rb-focus-top"><span class="rb-live-dot"></span><span>'+(heroExam.attempt_status==='IN_PROGRESS'?'CONTINUE WHERE YOU LEFT OFF':'RECOMMENDED NEXT')+'</span></div>'+
+          '<div class="rb-focus-type">'+h(examCategory(heroExam))+'</div><h3>'+h(heroExam.title)+'</h3><div class="rb-focus-meta"><span>'+h(heroExam.duration_min)+' min</span><span>'+h(heroExam.subject||examCategory(heroExam))+'</span><span>'+h(examGroup(heroExam))+'</span></div>'+
+          '<button class="rb-focus-start start" data-id="'+heroExam.id+'">'+(heroExam.attempt_status==='IN_PROGRESS'?'Resume exam':'Start exam')+' <span>→</span></button>'
+          :'<div class="rb-focus-empty"><span>✓</span><h3>You are all caught up.</h3><p>New assessments will appear here when they are available.</p></div>')+
+        '</div>'+
+      '</section>'+
+      '<section class="rb-metric-rail">'+
+        '<article><span>01</span><div><b>'+es.length+'</b><small>Exams available</small></div></article>'+
+        '<article><span>02</span><div><b>'+inProgress.length+'</b><small>In progress</small></div></article>'+
+        '<article><span>03</span><div><b>'+released.length+'</b><small>Results released</small></div></article>'+
+        '<article><span>04</span><div><b>'+Math.round(best)+'%</b><small>Personal best</small></div></article>'+
+      '</section>'+
+      '<section class="rb-library-section"><div class="rb-library-head"><div><span class="neo-kicker">AVAILABLE NOW</span><h2>Pick up your next exam.</h2></div><button class="rb-text-action" id="go-library-2">See complete library <span>↗</span></button></div><div class="rb-editorial-grid">'+(es.length?es.slice(0,6).map(examCard).join(''):'<div class="neo-empty">No exams are available yet.</div>')+'</div></section>';
+    document.getElementById('go-library').onclick=()=>{state.view='student-exams';render()};
+    document.getElementById('go-library-2').onclick=()=>{state.view='student-exams';render()};
+    document.getElementById('go-results').onclick=()=>{state.view='student-results';render()};
     document.getElementById('go-library').onclick=()=>{state.view='student-exams';render()};
     document.querySelectorAll('.start').forEach(bindExamStart);
   }else{
