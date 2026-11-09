@@ -1094,3 +1094,282 @@ button,.card,.neo-exam-card,.neo-category-card,.neo-result-card,.neo-cert-card,.
   .rb-editorial-grid .neo-exam-card,
   .rb-editorial-grid .neo-exam-card:nth-child(n){grid-column:1}
 }
+
+
+/* ===== Redbridge premium admin + exam experience v3 ===== */
+/* Admin dashboard */
+.rb-admin-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);
+  gap:28px;
+  padding:42px;
+  border:1px solid #d8d1c6;
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 85% 10%,rgba(89,112,137,.14),transparent 28%),
+    linear-gradient(135deg,#fff 0%,#f7f9fb 62%,#eef3f7 100%);
+  box-shadow:0 24px 60px rgba(13,34,51,.08);
+}
+.rb-admin-welcome{margin:18px 0 5px;color:#66737c}
+.rb-admin-hero h1{
+  margin:0 0 16px;
+  font:700 clamp(3rem,5vw,5rem)/.94 Georgia,serif;
+  letter-spacing:-.06em;
+}
+.rb-admin-hero h1 em{color:#416b8f;font-weight:500}
+.rb-admin-hero>div>p:last-child{max-width:680px;line-height:1.7;color:#68747c}
+.rb-admin-command{
+  align-self:stretch;
+  border-radius:18px;
+  padding:28px;
+  background:#0d2233;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  box-shadow:0 18px 45px rgba(13,34,51,.18);
+}
+.rb-admin-command>span{font-size:.68rem;font-weight:900;letter-spacing:.16em;color:#9fb6c8}
+.rb-admin-command h3{font:700 2rem/1.05 Georgia,serif;margin:18px 0 24px}
+.rb-admin-command .neo-btn{justify-content:space-between;background:#e9f0f5;color:#173044}
+.rb-admin-metrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin:16px 0 42px;
+}
+.rb-admin-metrics article{
+  min-height:146px;
+  padding:20px;
+  background:#fff;
+  border:1px solid #d9dfe4;
+  border-radius:16px;
+  position:relative;
+  overflow:hidden;
+}
+.rb-admin-index{position:absolute;right:16px;top:15px;font:700 .7rem Georgia,serif;color:#95a8b7}
+.rb-admin-metrics small{text-transform:uppercase;letter-spacing:.08em;font-weight:850;color:#68747c}
+.rb-admin-metrics strong{display:block;font:700 2.8rem Georgia,serif;margin:16px 0 13px;color:#102536}
+.rb-admin-metrics i{display:block;height:4px;border-radius:99px;background:linear-gradient(90deg,#5f84a6 0 62%,#edf2f5 62%)}
+.rb-admin-workspace{
+  border-top:1px solid #d6dde2;
+  padding-top:28px;
+}
+.rb-admin-work-head{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:18px}
+.rb-admin-work-head h2{font:700 2.8rem Georgia,serif;margin:6px 0 0;letter-spacing:-.045em}
+.rb-admin-work-head p{max-width:430px;color:#68747c;line-height:1.6}
+.rb-admin-action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.rb-admin-action-grid button{
+  min-height:170px;
+  border:1px solid #d8dfe4;
+  border-radius:16px;
+  background:#fff;
+  padding:22px;
+  text-align:left;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:18px;
+  align-items:start;
+  transition:.2s;
+}
+.rb-admin-action-grid button:hover{transform:translateY(-3px);box-shadow:0 16px 30px rgba(13,34,51,.08);border-color:#b9c6d0}
+.rb-action-icon{
+  width:40px;height:40px;border-radius:11px;
+  display:grid;place-items:center;
+  background:#edf3f7;color:#416b8f;
+  font:700 .8rem Georgia,serif;
+}
+.rb-admin-action-grid b{display:block;font:700 1.3rem Georgia,serif;margin:2px 0 8px}
+.rb-admin-action-grid small{display:block;color:#6b7780;line-height:1.5}
+.rb-admin-action-grid i{font-style:normal;color:#7790a4}
+
+/* Premium exam workspace */
+.secure-exam{max-width:none;padding:0;background:#eef2f5;min-height:100vh}
+#exam{min-height:100vh}
+.rb-exam-header{
+  position:sticky;top:0;z-index:90;
+  height:76px;
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:24px;
+  align-items:center;
+  padding:0 24px;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid #dbe2e7;
+}
+.rb-exam-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.rb-exam-brand>span{
+  width:38px;height:38px;border-radius:11px;background:#0d2233;color:#fff;
+  display:grid;place-items:center;font-weight:900;font-size:.82rem;
+}
+.rb-exam-brand div{min-width:0}
+.rb-exam-brand b,.rb-exam-brand small{display:block}
+.rb-exam-brand b{font-size:.86rem}
+.rb-exam-brand small{color:#677680;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+.rb-exam-status{display:flex;align-items:center;gap:8px;color:#64737e;font-size:.78rem}
+.rb-status-dot{width:7px;height:7px;border-radius:50%;background:#4bb98a}
+.rb-exam-status .autosave-status{margin:0;font-size:.78rem}
+.rb-exam-clock{display:flex;align-items:center;gap:12px}
+.rb-exam-clock small{color:#697780}
+.rb-exam-clock .timer{font-size:1.4rem;color:#102536;min-width:76px;text-align:right}
+.rb-icon-btn{
+  width:38px;height:38px;border-radius:10px;border:1px solid #d5dde3;
+  background:#fff;color:#1f3445;font-size:1rem;
+}
+.rb-question-nav{
+  position:sticky;top:76px;z-index:80;
+  display:flex;align-items:center;gap:16px;
+  padding:10px 24px;
+  border-bottom:1px solid #dce3e8;
+  background:#f7f9fa;
+}
+.rb-question-nav-label{min-width:92px}
+.rb-question-nav-label span,.rb-question-nav-label small{display:block}
+.rb-question-nav-label span{font-weight:850;font-size:.78rem}
+.rb-question-nav-label small{font-size:.68rem;color:#72808a}
+.rb-question-numbers{
+  display:flex;gap:6px;overflow:auto;padding:2px;
+  scrollbar-width:thin;
+}
+.rb-question-numbers button{
+  flex:0 0 auto;
+  min-width:32px;height:32px;padding:0 9px;
+  border:1px solid #d5dde3;border-radius:8px;background:#fff;color:#53636f;
+  font-size:.75rem;font-weight:800;
+}
+.rb-question-numbers button.active{background:#18364d;color:white;border-color:#18364d}
+.rb-proctor-setup{
+  max-width:1180px;
+  margin:20px auto 0;
+  border:1px solid #d8e0e6;
+  border-radius:18px;
+  background:#fff;
+  padding:24px;
+  display:grid;
+  grid-template-columns:1.2fr .9fr auto;
+  gap:24px;
+  align-items:center;
+}
+.rb-proctor-setup h3{font:700 1.6rem Georgia,serif;margin:7px 0}
+.rb-proctor-setup p{margin:0;color:#6b7983}
+.rb-proctor-setup .proctor-checks{grid-template-columns:repeat(3,1fr);margin:0}
+.rb-proctor-setup .proctor-checks span{
+  background:#f3f6f8;border:1px solid #dce4e9;border-radius:10px;color:#405666;text-align:center;padding:12px;
+}
+.rb-proctor-action{display:grid;gap:10px;min-width:220px}
+.rb-exam-layout{
+  max-width:1480px;
+  margin:0 auto;
+  padding:22px 24px 70px;
+  display:grid;
+  grid-template-columns:minmax(0,390px) minmax(0,1fr);
+  gap:18px;
+  align-items:start;
+}
+.rb-exam-layout:has(.rb-question-paper:not(.has-source)){grid-template-columns:1fr}
+.rb-source-panel{
+  position:sticky;top:134px;
+  max-height:calc(100vh - 154px);
+  border:1px solid #d8e0e6;
+  border-radius:18px;
+  background:#fff;
+  overflow:hidden;
+}
+.rb-panel-label{
+  padding:14px 16px;
+  border-bottom:1px solid #e2e8ec;
+  font-size:.68rem;font-weight:900;letter-spacing:.14em;color:#5c7181;
+}
+.rb-source-scroll{padding:20px;overflow:auto;max-height:calc(100vh - 200px);line-height:1.7;color:#344b5b}
+.rb-question-paper{
+  min-width:0;
+  background:#fff;
+  border:1px solid #d8e0e6;
+  border-radius:18px;
+  overflow:hidden;
+}
+.rb-paper-intro{
+  display:flex;justify-content:space-between;gap:28px;align-items:flex-start;
+  padding:30px 34px 24px;
+  background:linear-gradient(180deg,#fff,#f9fbfc);
+  border-bottom:1px solid #e2e8ec;
+}
+.rb-paper-intro h1{font:700 2.3rem Georgia,serif;letter-spacing:-.04em;margin:8px 0}
+.rb-paper-intro p{margin:0;color:#687781;line-height:1.55;max-width:760px}
+.rb-integrity-pill{
+  white-space:nowrap;border:1px solid #d9e2e7;background:#f3f6f8;
+  border-radius:999px;padding:9px 12px;color:#536978;font-size:.76rem;
+}
+.rb-question{
+  scroll-margin-top:150px;
+  display:grid;
+  grid-template-columns:56px 1fr;
+  gap:18px;
+  padding:30px 34px;
+  border-bottom:1px solid #e7ecef;
+}
+.rb-q-number{
+  width:42px;height:42px;border-radius:12px;
+  background:#edf3f7;color:#31536d;
+  display:grid;place-items:center;
+  font:700 .85rem Georgia,serif;
+}
+.rb-q-body{min-width:0}
+.rb-q-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+.rb-q-meta span{
+  border-radius:999px;background:#f4f6f7;color:#667681;padding:6px 9px;font-size:.7rem;font-weight:800;
+}
+.rb-question .exam-question-text{font-size:1.08rem;line-height:1.7;margin-bottom:16px}
+.rb-question .choice{
+  display:flex;gap:10px;align-items:flex-start;
+  margin:9px 0;padding:13px 14px;
+  border:1px solid #d8e0e5;border-radius:11px;background:#fff;
+}
+.rb-question .choice:hover{background:#f8fafb;border-color:#b9c9d4;transform:none}
+.rb-question .choice:has(input:checked){background:#eef5fa;border-color:#7f9fb6}
+.rb-question .written-answer{background:#fbfcfd;border-color:#d7e0e6}
+.rb-exam-submit{
+  display:flex;justify-content:space-between;align-items:center;gap:20px;
+  padding:24px 34px;
+  background:#f7f9fa;
+}
+.rb-exam-submit b,.rb-exam-submit small{display:block}
+.rb-exam-submit small{margin-top:4px;color:#6b7983}
+.rb-exam-submit .neo-btn{background:#17364d}
+.proctor-lock{
+  max-width:1180px;
+  margin:14px auto 0;
+  border:1px solid #e0d6c5;
+  background:#fff9ed;
+  border-radius:12px;
+  padding:12px 16px;
+}
+.exam-interaction-locked{filter:saturate(.6);opacity:.7;pointer-events:none}
+
+@media(max-width:1100px){
+  .rb-admin-hero{grid-template-columns:1fr}
+  .rb-admin-metrics{grid-template-columns:repeat(2,1fr)}
+  .rb-admin-action-grid{grid-template-columns:1fr}
+  .rb-exam-layout{grid-template-columns:1fr}
+  .rb-source-panel{position:relative;top:auto;max-height:none}
+  .rb-source-scroll{max-height:420px}
+  .rb-proctor-setup{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .rb-admin-hero{padding:28px}
+  .rb-admin-metrics{grid-template-columns:1fr}
+  .rb-admin-work-head{flex-direction:column;align-items:flex-start}
+  .rb-exam-header{grid-template-columns:1fr auto;padding:0 12px}
+  .rb-exam-status{display:none}
+  .rb-exam-brand small{max-width:48vw}
+  .rb-question-nav{top:76px;padding:8px 12px}
+  .rb-question-nav-label{display:none}
+  .rb-exam-layout{padding:12px 10px 80px}
+  .rb-paper-intro{padding:22px 18px;flex-direction:column}
+  .rb-question{grid-template-columns:1fr;padding:24px 18px}
+  .rb-q-number{width:36px;height:36px}
+  .rb-exam-submit{padding:20px 18px;align-items:flex-start;flex-direction:column}
+  .rb-exam-submit .neo-btn{width:100%}
+  .rb-proctor-setup{margin:12px 10px 0}
+}
