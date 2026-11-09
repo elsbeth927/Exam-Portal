@@ -246,3 +246,571 @@ h1,h2,h3,p{margin-top:0}
 .verify-grid small{display:block;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-bottom:6px}
 .verify-grid b{font-size:1.05rem}.verify-grid .wide{grid-column:1/-1}.verify-foot{margin:24px 0 0;color:var(--mut)}
 @media(max-width:640px){.verify-grid{grid-template-columns:1fr}.verify-grid .wide{grid-column:auto}}
+
+
+/* ===== Redbridge Editorial UI refresh 2026-11-09 ===== */
+:root{
+  --ink:#101820;
+  --mut:#67737d;
+  --bg:#f3f0e9;
+  --paper:#fffdf9;
+  --line:#ddd8cf;
+  --red:#a6172c;
+  --red2:#781021;
+  --navy:#0d2233;
+  --gold:#b98b35;
+  --mint:#eaf1ed;
+  --shadow:0 22px 60px rgba(13,34,51,.10);
+  --soft:0 12px 30px rgba(13,34,51,.07);
+  --radius:18px;
+}
+html{background:#f3f0e9}
+body{
+  color:var(--ink);
+  background:
+    linear-gradient(rgba(13,34,51,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,34,51,.025) 1px,transparent 1px),
+    radial-gradient(circle at 18% 10%,rgba(185,139,53,.08),transparent 25rem),
+    #f3f0e9;
+  background-size:28px 28px,28px 28px,auto,auto;
+  letter-spacing:-.006em;
+}
+button,.card,.neo-exam-card,.neo-category-card,.neo-result-card,.neo-cert-card,.neo-stat-grid article{
+  -webkit-tap-highlight-color:transparent;
+}
+.neo-kicker{
+  color:var(--red);
+  letter-spacing:.19em;
+  font-size:.68rem;
+}
+.neo-chip,.badge{
+  border:1px solid rgba(13,34,51,.08);
+  background:#f4f1eb;
+  color:#46545f;
+  letter-spacing:.06em;
+}
+.neo-chip.red{background:#f5e8e9;border-color:#ead0d4;color:var(--red)}
+.btn,.neo-btn{
+  border-radius:999px;
+  padding:11px 18px;
+  box-shadow:none;
+  letter-spacing:-.01em;
+}
+.btn:hover,.neo-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 20px rgba(166,23,44,.16);
+}
+.btn.alt,.neo-btn.ghost{
+  background:rgba(255,253,249,.72);
+  border-color:#d5d0c7;
+  backdrop-filter:blur(12px);
+}
+.field input,.field select,.field textarea,.row input,.row select{
+  border-radius:12px;
+  border-color:#d8d3ca;
+  background:#fffefa;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:#9d8b76;
+  box-shadow:0 0 0 4px rgba(185,139,53,.10);
+}
+
+/* Public landing: editorial, restrained, product-led */
+.neo-landing{
+  background:
+    radial-gradient(circle at 78% 12%,rgba(185,139,53,.11),transparent 24rem),
+    radial-gradient(circle at 15% 28%,rgba(166,23,44,.055),transparent 22rem),
+    linear-gradient(rgba(13,34,51,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,34,51,.028) 1px,transparent 1px),
+    #f5f2ec;
+  background-size:auto,auto,32px 32px,32px 32px,auto;
+}
+.neo-header{
+  height:84px;
+  max-width:1380px;
+  padding:0 34px;
+  border-bottom:1px solid rgba(13,34,51,.09);
+}
+.neo-brand{
+  gap:12px;
+  font-size:.92rem;
+  letter-spacing:-.01em;
+}
+.neo-brand img{
+  width:164px;
+  height:48px;
+  padding:0;
+  background:transparent;
+  border-radius:0;
+}
+.neo-brand span{
+  color:#4f5a62;
+  font-weight:750;
+  border-left-color:#cfc9bf;
+}
+.neo-public-nav{gap:12px}
+.neo-public-nav .neo-link{padding:10px 12px;color:#46535d;font-size:.9rem}
+.neo-hero-wrap{
+  max-width:1380px;
+  min-height:690px;
+  padding:86px 34px 110px;
+  gap:46px;
+}
+.neo-hero{max-width:760px}
+.neo-eyebrow{
+  color:#58646c;
+  font-size:.72rem;
+  letter-spacing:.19em;
+  margin-bottom:28px;
+}
+.neo-eyebrow span{width:34px;background:var(--gold)}
+.neo-hero h1{
+  max-width:760px;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(58px,6vw,92px);
+  line-height:.95;
+  letter-spacing:-.06em;
+  margin-bottom:27px;
+}
+.neo-hero h1 em{
+  color:var(--red);
+  font-style:italic;
+}
+.neo-hero p{
+  max-width:620px;
+  color:#5f6c75;
+  font-size:1.08rem;
+  line-height:1.72;
+}
+.neo-hero-actions{margin:30px 0 34px}
+.neo-trust-row{
+  border-top:1px solid rgba(13,34,51,.10);
+  padding-top:22px;
+  gap:14px 22px;
+  color:#66727a;
+}
+.neo-trust-row span:before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);margin:0 9px 2px 0}
+.neo-showcase{
+  min-height:540px;
+  perspective:none;
+}
+.neo-orbit{display:none}
+.neo-feature-card,.neo-mini-card,.neo-score-card{
+  border:1px solid rgba(13,34,51,.10);
+  background:rgba(255,253,249,.88);
+  backdrop-filter:blur(18px);
+  box-shadow:0 24px 70px rgba(13,34,51,.12);
+}
+.neo-feature-card.main-card{
+  width:min(440px,82%);
+  left:8%;
+  top:82px;
+  border-radius:18px;
+  padding:28px;
+  transform:none;
+}
+.neo-feature-card.main-card:before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:var(--red);
+  border-radius:18px 0 0 18px;
+}
+.neo-feature-card h3{
+  font-family:Georgia,serif;
+  font-size:2.15rem;
+  margin:52px 0 7px;
+  letter-spacing:-.035em;
+}
+.neo-progress{height:6px;background:#ebe7df}
+.neo-progress i{background:var(--red)}
+.neo-mini-card{
+  border-radius:15px;
+  transform:none!important;
+}
+.neo-mini-card .neo-icon{
+  background:#f0ece4;
+  color:var(--navy);
+  border-radius:11px;
+}
+.mini-one{right:1%;top:35px}
+.mini-two{right:0;bottom:78px}
+.neo-score-card{
+  left:1%;
+  bottom:20px;
+  border-radius:15px;
+}
+.neo-score-card strong{
+  font-family:Georgia,serif;
+  color:var(--red);
+}
+.neo-category-strip{
+  max-width:1380px;
+  padding:82px 34px 110px;
+}
+.neo-section-head h2{
+  font-family:Georgia,serif;
+  font-size:clamp(2.2rem,4vw,3.6rem);
+  letter-spacing:-.045em;
+}
+.neo-category-grid{gap:12px}
+.neo-category-card{
+  min-height:205px;
+  border-radius:14px;
+  padding:22px;
+  background:rgba(255,253,249,.82);
+  border-color:#dcd6cc;
+  box-shadow:none;
+}
+.neo-category-card:hover{
+  transform:translateY(-3px);
+  border-color:#c5b9a7;
+  box-shadow:0 14px 34px rgba(13,34,51,.08);
+}
+.neo-category-card b{
+  font-family:Georgia,serif;
+  font-size:1.28rem;
+  letter-spacing:-.02em;
+}
+.neo-category-icon{
+  width:48px;height:48px;
+  border-radius:12px;
+  background:#f0ece4;
+  color:#213545;
+}
+.neo-category-card i{color:var(--red);font-size:.86rem}
+.neo-proctor-band{
+  background:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),
+    #0d2233;
+  background-size:26px 26px,26px 26px,auto;
+  padding-top:78px;
+  padding-bottom:78px;
+}
+.neo-proctor-band h2{
+  font-family:Georgia,serif;
+  font-size:clamp(2.4rem,4vw,4rem);
+  letter-spacing:-.045em;
+}
+.neo-proctor-points span{
+  border-radius:10px;
+  background:rgba(255,255,255,.025);
+}
+.neo-proctor-points b{color:#d8b368}
+
+/* Authenticated shell */
+.neo-app{
+  grid-template-columns:236px minmax(0,1fr);
+  background:
+    linear-gradient(rgba(13,34,51,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,34,51,.022) 1px,transparent 1px),
+    #f3f0e9;
+  background-size:30px 30px,30px 30px,auto;
+}
+.neo-sidebar{
+  background:#0d2233;
+  padding:24px 14px;
+  border-right:1px solid rgba(255,255,255,.05);
+}
+.neo-side-brand{
+  padding:0 8px 24px;
+  font-size:.92rem;
+  letter-spacing:.01em;
+}
+.neo-side-brand img{
+  max-width:186px;
+  padding:0;
+  background:transparent;
+  border-radius:0;
+}
+.neo-side-section{gap:4px}
+.neo-side-section button{
+  border-radius:9px;
+  padding:11px 12px;
+  font-size:.9rem;
+  color:#bac6cd;
+}
+.neo-side-section button span{
+  width:27px;height:27px;
+  border-radius:8px;
+  background:rgba(255,255,255,.045);
+  font-size:.82rem;
+}
+.neo-side-section button:hover{background:rgba(255,255,255,.06)}
+.neo-side-section button.active{
+  background:#fffdf9;
+  color:#0d2233;
+}
+.neo-side-section button.active span{
+  background:#f0e7db;
+  color:var(--red);
+}
+.neo-admin-pill{
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:10px;
+}
+.neo-signout{border-radius:9px}
+.neo-main{padding:0 32px 60px}
+.neo-topbar{
+  height:98px;
+  border-bottom-color:#d7d1c7;
+}
+.neo-topbar h2{
+  font:700 1.9rem Georgia,serif;
+  letter-spacing:-.035em;
+}
+.neo-profile>span{
+  width:42px;height:42px;
+  border-radius:50%;
+  background:#f0e7db;
+  color:var(--red);
+  border:1px solid #dacdbd;
+}
+.neo-page{padding-top:28px}
+.neo-dashboard-hero{
+  border-radius:16px;
+  border-color:#d9d3c9;
+  padding:32px 34px;
+  background:rgba(255,253,249,.82);
+  box-shadow:none;
+}
+.neo-dashboard-hero:after{
+  width:180px;height:180px;
+  border:1px solid rgba(166,23,44,.12);
+  right:-40px;top:-60px;
+}
+.neo-dashboard-hero:before{
+  content:"";
+  position:absolute;
+  width:250px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(185,139,53,.55),transparent);
+  right:20px;bottom:28px;
+  transform:rotate(-14deg);
+}
+.neo-dashboard-hero h1{
+  font:700 clamp(2.15rem,4vw,3rem) Georgia,serif;
+  letter-spacing:-.045em;
+}
+.neo-stat-grid{gap:12px;margin-top:14px}
+.neo-stat-grid article{
+  border-radius:14px;
+  border-color:#dcd6cc;
+  background:rgba(255,253,249,.86);
+}
+.neo-stat-grid strong{
+  font-family:Georgia,serif;
+  letter-spacing:-.04em;
+}
+.neo-exam-grid{gap:12px}
+.neo-exam-card{
+  border-radius:14px;
+  border-color:#dcd6cc;
+  background:rgba(255,253,249,.90);
+  padding:21px;
+}
+.neo-exam-card:hover{
+  transform:translateY(-2px);
+  border-color:#c8bcaa;
+  box-shadow:0 12px 30px rgba(13,34,51,.07);
+}
+.neo-exam-accent{
+  width:3px;
+  background:var(--gold);
+}
+.neo-exam-card h3{
+  font-family:Georgia,serif;
+  letter-spacing:-.025em;
+}
+.neo-filter{
+  border-radius:999px;
+  background:#f8f5ef;
+  border-color:#d9d3ca;
+  font-size:.84rem;
+}
+.neo-filter.active{
+  background:#0d2233;
+  border-color:#0d2233;
+}
+.neo-admin-actions{gap:12px}
+.neo-admin-actions button{
+  border-radius:14px;
+  border-color:#dcd6cc;
+  background:#fffdf9;
+}
+.neo-admin-actions span{
+  background:#f0e7db;
+  border-radius:10px;
+}
+.neo-result-card,.neo-cert-card{
+  border-radius:14px;
+  border-color:#dcd6cc;
+  background:#fffdf9;
+}
+.neo-cert-mark{
+  border-radius:12px;
+  background:#0d2233;
+  color:#d8b368;
+}
+
+/* Secure exam: remove visual noise, preserve focus */
+.secure-exam{
+  max-width:1180px;
+  padding:24px;
+}
+.exam-top{
+  top:0;
+  background:rgba(243,240,233,.92);
+  border-bottom:1px solid #d9d3ca;
+  padding:15px 0;
+}
+.timer{
+  color:#0d2233;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:-.03em;
+}
+.exam-paper{
+  background:#fffdf9;
+  border:1px solid #d9d3ca;
+  border-radius:16px;
+  padding:32px 36px;
+  box-shadow:0 16px 40px rgba(13,34,51,.06);
+}
+.examq{
+  padding:27px 0;
+  border-bottom-color:#e8e2d8;
+}
+.exam-question-text{
+  font-size:1.06rem;
+  line-height:1.72;
+}
+.choice{
+  border-radius:10px;
+  border-color:#ddd7cd;
+  background:#fffefa;
+  transition:border-color .15s,background .15s,transform .15s;
+}
+.choice:hover{
+  border-color:#b9ad9b;
+  transform:translateX(2px);
+}
+.choice:has(input:checked){
+  border-color:#b98b35;
+  background:#fbf5e8;
+}
+.written-answer{
+  border-radius:10px;
+  background:#fffefa;
+  border-color:#d8d2c8;
+}
+.integrity-warning{
+  border-radius:10px;
+  background:#8c1528;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+}
+.proctor-dock{
+  width:210px;
+  border-radius:14px;
+  background:#0d2233;
+  border:1px solid rgba(255,255,255,.07);
+}
+.proctor-dock video{border-radius:9px}
+.proctor-consent{
+  border-radius:14px;
+  background:#fffdf9;
+  border-color:#d9d3ca;
+}
+
+/* Modal */
+.modal-backdrop{
+  background:rgba(7,19,28,.62);
+  backdrop-filter:blur(10px);
+}
+.modal{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.35);
+  background:#fffdf9;
+  box-shadow:0 30px 100px rgba(0,0,0,.30);
+}
+.modal .close{background:#f0ece4}
+.neo-auth-head h3{
+  font-size:2.15rem;
+  letter-spacing:-.04em;
+}
+
+/* Motion: purposeful, not decorative */
+@keyframes rbFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.neo-page>.neo-dashboard-hero,
+.neo-page>.neo-section,
+.neo-page>.neo-stat-grid,
+.neo-page>.neo-section-head{
+  animation:rbFadeUp .42s cubic-bezier(.2,.8,.2,1) both;
+}
+.neo-page>.neo-stat-grid{animation-delay:.04s}
+.neo-page>.neo-section{animation-delay:.07s}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+@media(max-width:980px){
+  .neo-header{padding:0 20px}
+  .neo-hero-wrap{grid-template-columns:1fr;padding:62px 20px 78px}
+  .neo-showcase{min-height:450px}
+  .neo-feature-card.main-card{left:4%}
+  .neo-category-strip{padding-left:20px;padding-right:20px}
+  .neo-category-grid{grid-template-columns:repeat(2,1fr)}
+  .neo-app{grid-template-columns:78px minmax(0,1fr)}
+  .neo-sidebar{padding:18px 10px}
+  .neo-side-brand span,.neo-side-section button:not(.active){font-size:0}
+  .neo-side-brand img{width:54px}
+  .neo-side-section button{justify-content:center}
+  .neo-side-section button span{font-size:.82rem;margin:0}
+  .neo-side-bottom .neo-admin-pill{display:none}
+  .neo-main{padding:0 20px 50px}
+}
+@media(max-width:680px){
+  .neo-public-nav .neo-link{display:none}
+  .neo-brand span{display:none}
+  .neo-hero h1{font-size:clamp(48px,15vw,68px)}
+  .neo-showcase{min-height:390px}
+  .neo-feature-card.main-card{width:90%;left:5%;top:45px}
+  .mini-one{top:8px}.mini-two{bottom:24px}
+  .neo-score-card{display:none}
+  .neo-category-grid{grid-template-columns:1fr}
+  .neo-proctor-band{grid-template-columns:1fr;padding:58px 22px}
+  .neo-proctor-points{grid-template-columns:1fr}
+  .neo-app{display:block}
+  .neo-sidebar{
+    position:fixed;
+    left:12px;right:12px;bottom:12px;top:auto;
+    height:auto;
+    z-index:200;
+    border-radius:16px;
+    padding:8px;
+    flex-direction:row;
+    box-shadow:0 16px 40px rgba(0,0,0,.22);
+  }
+  .neo-side-brand,.neo-side-bottom{display:none}
+  .neo-side-section{
+    width:100%;
+    display:flex;
+    justify-content:space-around;
+  }
+  .neo-side-section button{
+    flex:1;
+    justify-content:center;
+    padding:9px 6px;
+    font-size:0!important;
+  }
+  .neo-side-section button span{font-size:.8rem}
+  .neo-main{padding:0 14px 94px}
+  .neo-topbar{height:84px}
+  .neo-profile>div{display:none}
+  .neo-topbar h2{font-size:1.55rem}
+  .neo-dashboard-hero{padding:25px 22px}
+  .neo-stat-grid,.neo-exam-grid,.neo-result-grid{grid-template-columns:1fr}
+  .exam-paper{padding:22px 18px}
+  .proctor-dock{width:152px;right:10px;bottom:82px}
+}
