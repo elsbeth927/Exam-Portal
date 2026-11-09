@@ -121,7 +121,7 @@ function render(){
   const items=navItems();
   const admin=state.me.role!=='student';
   R.innerHTML=`
-  <div class="neo-app">
+  <div class="neo-app ${admin?'admin-shell':'student-shell'}">
     <aside class="neo-sidebar">
       <button class="neo-side-brand" id="home-logo"><img src="/app/redbridge-logo.svg" alt="Redbridge"><span>Exam Platform</span></button>
       <div class="neo-side-section">${items.map(([k,l])=>'<button data-v="'+k+'" class="'+(state.view===k?'active':'')+'"><span>'+navIcon(k)+'</span>'+h(l)+'</button>').join('')}</div>
@@ -229,27 +229,55 @@ async function loadView(){const P=document.getElementById('page');P.innerHTML='<
     const best=released.length?Math.max(...released.map(x=>Number(x.percentage||0))):0;
     const first=(state.me.first_name||'Candidate');
     const inProgress=es.filter(x=>x.attempt_status==='IN_PROGRESS');
-    const heroExam=inProgress[0]||es[0]||null;
+    const available=es.filter(x=>x.attempt_status!=='COMPLETED');
+    const recentResults=released.slice().sort((a,b)=>new Date(b.submitted_at||b.updated_at||0)-new Date(a.submitted_at||a.updated_at||0)).slice(0,4);
+    const completedCount=released.length;
+    const subjectMap={};
+    released.forEach(r=>{
+      const key=r.subject||r.exam_subject||'General';
+      if(!subjectMap[key])subjectMap[key]=[];
+      subjectMap[key].push(Number(r.percentage||0));
+    });
+    const subjectProgress=Object.entries(subjectMap).map(([name,vals])=>({name,avg:Math.round(vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length)),count:vals.length})).sort((a,b)=>b.avg-a.avg).slice(0,5);
+    const nextExams=(inProgress.length?inProgress:available).slice(0,4);
+
     P.innerHTML=
-      '<section class="rb-student-hero">'+
-        '<div class="rb-hero-copy"><span class="neo-kicker">REDBRIDGE EXAM CENTER</span><div class="rb-hello">Welcome back, '+h(first)+'.</div><h1>Ready when <em>you are.</em></h1><p>Your exams, progress and verified achievements — in one focused workspace.</p><div class="rb-hero-actions"><button class="neo-btn big" id="go-library">Browse all exams</button><button class="rb-text-action" id="go-results">View results <span>↗</span></button></div></div>'+
-        '<div class="rb-focus-panel">'+
-          (heroExam?'<div class="rb-focus-top"><span class="rb-live-dot"></span><span>'+(heroExam.attempt_status==='IN_PROGRESS'?'CONTINUE WHERE YOU LEFT OFF':'RECOMMENDED NEXT')+'</span></div>'+
-          '<div class="rb-focus-type">'+h(examCategory(heroExam))+'</div><h3>'+h(heroExam.title)+'</h3><div class="rb-focus-meta"><span>'+h(heroExam.duration_min)+' min</span><span>'+h(heroExam.subject||examCategory(heroExam))+'</span><span>'+h(examGroup(heroExam))+'</span></div>'+
-          '<button class="rb-focus-start start" data-id="'+heroExam.id+'">'+(heroExam.attempt_status==='IN_PROGRESS'?'Resume exam':'Start exam')+' <span>→</span></button>'
-          :'<div class="rb-focus-empty"><span>✓</span><h3>You are all caught up.</h3><p>New assessments will appear here when they are available.</p></div>')+
+      '<section class="ux-student-head">'+
+        '<div><span class="ux-overline">STUDENT DASHBOARD</span><h1>Good morning, '+h(first)+'.</h1><p>Everything you need for your next assessment, progress and results.</p></div>'+
+        '<div class="ux-student-profile-card"><div class="ux-avatar">'+h((state.me.first_name||'R').slice(0,1)+(state.me.last_name||'').slice(0,1))+'</div><div><b>'+h(state.me.first_name+' '+state.me.last_name)+'</b><small>'+h(state.me.email||'Candidate')+'</small></div></div>'+
+      '</section>'+
+
+      '<section class="ux-overview-grid">'+
+        '<article class="ux-feature-card ux-feature-blue"><div class="ux-feature-copy"><span class="ux-card-label">NEXT TO DO</span><h2>'+(nextExams[0]?h(nextExams[0].title):'You are all caught up')+'</h2><p>'+(nextExams[0]?(h(nextExams[0].subject||examCategory(nextExams[0]))+' · '+h(nextExams[0].duration_min)+' min'):'No active exams are waiting for you.')+'</p>'+(nextExams[0]?'<button class="ux-primary start" data-id="'+nextExams[0].id+'">'+(nextExams[0].attempt_status==='IN_PROGRESS'?'Resume exam':'Start exam')+'</button>':'')+'</div><div class="ux-feature-art"><span></span><i></i><b>✓</b></div></article>'+
+        '<article class="ux-kpi-card"><span>Available exams</span><strong>'+es.length+'</strong><small>Ready in your catalogue</small><div class="ux-mini-bar"><i style="width:'+Math.min(100,Math.max(8,es.length/5))+'%"></i></div></article>'+
+        '<article class="ux-kpi-card"><span>Completed</span><strong>'+completedCount+'</strong><small>Published results</small><div class="ux-mini-bar alt"><i style="width:'+Math.min(100,completedCount*12)+'%"></i></div></article>'+
+        '<article class="ux-kpi-card"><span>Personal best</span><strong>'+Math.round(best)+'%</strong><small>Your highest released score</small><div class="ux-ring" style="--p:'+Math.round(best)+'"><b>'+Math.round(best)+'</b></div></article>'+
+      '</section>'+
+
+      '<section class="ux-dashboard-columns">'+
+        '<div class="ux-main-column">'+
+          '<article class="ux-panel"><div class="ux-panel-head"><div><span class="ux-card-label">EXAM CENTRE</span><h2>Upcoming & available</h2></div><button class="ux-link" id="ux-all-exams">View all →</button></div><div class="ux-exam-list">'+
+            (nextExams.length?nextExams.map((x,i)=>'<div class="ux-exam-row"><div class="ux-exam-index">'+String(i+1).padStart(2,'0')+'</div><div class="ux-exam-info"><span>'+h(examCategory(x))+'</span><b>'+h(x.title)+'</b><small>'+h(x.subject||examCategory(x))+' · '+h(x.duration_min)+' min · '+h(examGroup(x))+'</small></div><button class="ux-row-action start" data-id="'+x.id+'">'+(x.attempt_status==='IN_PROGRESS'?'Resume':'Start')+'</button></div>').join(''):'<div class="ux-empty">No exams are currently available.</div>')+
+          '</div></article>'+
+
+          '<article class="ux-panel"><div class="ux-panel-head"><div><span class="ux-card-label">PERFORMANCE</span><h2>Subject progress</h2></div><button class="ux-link" id="ux-results">Results →</button></div><div class="ux-progress-list">'+
+            (subjectProgress.length?subjectProgress.map(s=>'<div class="ux-progress-row"><div><b>'+h(s.name)+'</b><small>'+s.count+' released result'+(s.count===1?'':'s')+'</small></div><div class="ux-progress-track"><i style="width:'+Math.max(4,Math.min(100,s.avg))+'%"></i></div><strong>'+s.avg+'%</strong></div>').join(''):'<div class="ux-empty">Subject progress will appear after results are published.</div>')+
+          '</div></article>'+
         '</div>'+
-      '</section>'+
-      '<section class="rb-metric-rail">'+
-        '<article><span>01</span><div><b>'+es.length+'</b><small>Exams available</small></div></article>'+
-        '<article><span>02</span><div><b>'+inProgress.length+'</b><small>In progress</small></div></article>'+
-        '<article><span>03</span><div><b>'+released.length+'</b><small>Results released</small></div></article>'+
-        '<article><span>04</span><div><b>'+Math.round(best)+'%</b><small>Personal best</small></div></article>'+
-      '</section>'+
-      '<section class="rb-library-section"><div class="rb-library-head"><div><span class="neo-kicker">AVAILABLE NOW</span><h2>Pick up your next exam.</h2></div><button class="rb-text-action" id="go-library-2">See complete library <span>↗</span></button></div><div class="rb-editorial-grid">'+(es.length?es.slice(0,6).map(examCard).join(''):'<div class="neo-empty">No exams are available yet.</div>')+'</div></section>';
-    document.getElementById('go-library').onclick=()=>{state.view='student-exams';render()};
-    document.getElementById('go-library-2').onclick=()=>{state.view='student-exams';render()};
-    document.getElementById('go-results').onclick=()=>{state.view='student-results';render()};
+
+        '<aside class="ux-side-column">'+
+          '<article class="ux-panel ux-calendar-card"><div class="ux-panel-head"><div><span class="ux-card-label">THIS WEEK</span><h2>Exam planner</h2></div></div><div class="ux-week-strip">'+['M','T','W','T','F','S','S'].map((d,i)=>'<span class="'+(i===new Date().getDay()-1?'today':'')+'"><b>'+d+'</b><small>'+(new Date(Date.now()+(i-(new Date().getDay()-1))*86400000)).getDate()+'</small></span>').join('')+'</div><div class="ux-planner-note"><i></i><div><b>'+inProgress.length+' exam'+(inProgress.length===1?'':'s')+' in progress</b><small>'+(inProgress.length?'Continue before starting another assessment.':'You have no unfinished attempts.')+'</small></div></div></article>'+
+
+          '<article class="ux-panel"><div class="ux-panel-head"><div><span class="ux-card-label">RECENT</span><h2>Results</h2></div></div><div class="ux-result-list">'+
+            (recentResults.length?recentResults.map(r=>'<div class="ux-result-row"><div><b>'+h(r.exam_title||r.title||'Assessment')+'</b><small>'+h(r.subject||'Exam')+'</small></div><strong>'+Math.round(Number(r.percentage||0))+'%</strong></div>').join(''):'<div class="ux-empty">No released results yet.</div>')+
+          '</div></article>'+
+
+          '<article class="ux-panel ux-notice-card"><div class="ux-panel-head"><div><span class="ux-card-label">NOTICE BOARD</span><h2>Announcements</h2></div></div><div class="ux-notice"><span>i</span><div><b>Secure exam reminder</b><p>For proctored exams, allow camera and microphone access and stay in fullscreen mode.</p></div></div><div class="ux-notice"><span>✓</span><div><b>Autosave is active</b><p>Your answers are saved automatically during supported exams.</p></div></div></article>'+
+        '</aside>'+
+      '</section>';
+
+    document.getElementById('ux-all-exams').onclick=()=>{state.view='student-exams';render()};
+    document.getElementById('ux-results').onclick=()=>{state.view='student-results';render()};
     document.querySelectorAll('.start').forEach(bindExamStart);
   }else{
     const d=await api('/dashboard');
