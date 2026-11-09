@@ -2,6 +2,12 @@
   publish = "site"
 
 [[redirects]]
+  from = "/"
+  to = "/app/index.html"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/*"
   to = "https://uxbzfirtxpwpbhlsusmf.supabase.co/functions/v1/exam-api/:splat"
   status = 200
