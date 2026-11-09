@@ -1373,3 +1373,346 @@ button,.card,.neo-exam-card,.neo-category-card,.neo-result-card,.neo-cert-card,.
   .rb-exam-submit .neo-btn{width:100%}
   .rb-proctor-setup{margin:12px 10px 0}
 }
+
+
+/* ===== Student dashboard premium reference redesign v4 ===== */
+.student-shell{
+  --ux-blue:#6f8ff7;
+  --ux-blue-strong:#4f6fd8;
+  --ux-lilac:#9a82ee;
+  --ux-orange:#e9a26b;
+  --ux-cloud:#eef2f6;
+  --ux-card:#ffffff;
+  --ux-ink:#1b2430;
+  --ux-muted:#73808d;
+  --ux-line:#e2e8ee;
+  background:var(--ux-cloud);
+}
+.student-shell .neo-sidebar{
+  background:#fff;
+  color:var(--ux-ink);
+  border-right:1px solid var(--ux-line);
+  box-shadow:none;
+}
+.student-shell .neo-side-brand{
+  border-bottom:1px solid var(--ux-line);
+  color:var(--ux-ink);
+}
+.student-shell .neo-side-brand img{
+  background:#fff;
+}
+.student-shell .neo-side-section button{
+  color:#5e6a76;
+  font-weight:700;
+}
+.student-shell .neo-side-section button span{
+  background:#f4f6f8;
+  color:#72808d;
+}
+.student-shell .neo-side-section button:hover{
+  background:#f7f9fb;
+  color:#263443;
+}
+.student-shell .neo-side-section button.active{
+  background:#eef3ff;
+  color:#3453b5;
+  box-shadow:none;
+}
+.student-shell .neo-side-section button.active span{
+  background:#dfe8ff;
+  color:#3453b5;
+}
+.student-shell .neo-admin-pill{
+  background:#f7f9fb;
+  border-color:var(--ux-line);
+  color:#344250;
+}
+.student-shell .neo-admin-pill small{color:#7b8791}
+.student-shell .neo-signout{
+  color:#4e5b66;
+  border-color:var(--ux-line);
+  background:#fff;
+}
+.student-shell .neo-main{
+  background:var(--ux-cloud);
+}
+.student-shell .neo-topbar{
+  border-bottom:0;
+  height:92px;
+}
+.student-shell .neo-topbar h2{
+  font-family:Inter,ui-sans-serif,sans-serif;
+  font-size:1.55rem;
+  font-weight:800;
+  letter-spacing:-.025em;
+}
+.student-shell .neo-profile{
+  border-color:var(--ux-line);
+  background:#fff;
+}
+.student-shell .neo-profile>span{
+  background:#edf2ff;
+  color:#4b66c6;
+  border:0;
+}
+.student-shell .neo-page{
+  max-width:1500px;
+  padding-top:6px;
+}
+.ux-student-head{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  align-items:flex-end;
+  margin:8px 0 22px;
+}
+.ux-overline,.ux-card-label{
+  font-size:.68rem;
+  font-weight:900;
+  letter-spacing:.14em;
+  color:#758390;
+}
+.ux-student-head h1{
+  margin:7px 0 4px;
+  font:800 clamp(2rem,3vw,3rem)/1.05 Inter,ui-sans-serif,sans-serif;
+  letter-spacing:-.045em;
+  color:var(--ux-ink);
+}
+.ux-student-head p{margin:0;color:var(--ux-muted)}
+.ux-student-profile-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 14px 10px 10px;
+  background:#fff;
+  border:1px solid var(--ux-line);
+  border-radius:16px;
+}
+.ux-avatar{
+  width:42px;height:42px;
+  border-radius:12px;
+  background:#edf2ff;
+  color:#536dcc;
+  display:grid;place-items:center;
+  font-weight:900;
+}
+.ux-student-profile-card b,.ux-student-profile-card small{display:block}
+.ux-student-profile-card small{color:#84909b;margin-top:2px;font-size:.76rem}
+
+.ux-overview-grid{
+  display:grid;
+  grid-template-columns:1.65fr repeat(3,.7fr);
+  gap:14px;
+  margin-bottom:18px;
+}
+.ux-feature-card,.ux-kpi-card,.ux-panel{
+  background:var(--ux-card);
+  border:1px solid var(--ux-line);
+  border-radius:18px;
+  box-shadow:0 10px 30px rgba(37,55,78,.045);
+}
+.ux-feature-card{
+  min-height:240px;
+  padding:28px;
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:1.25fr .75fr;
+}
+.ux-feature-blue{
+  background:
+    radial-gradient(circle at 90% 5%,rgba(255,255,255,.72),transparent 32%),
+    linear-gradient(135deg,#eaf0ff,#f4f7ff 58%,#e7edff);
+}
+.ux-feature-copy{position:relative;z-index:2}
+.ux-feature-copy h2{
+  margin:10px 0 8px;
+  max-width:520px;
+  font:800 clamp(1.55rem,2.3vw,2.45rem)/1.05 Inter,ui-sans-serif,sans-serif;
+  letter-spacing:-.045em;
+}
+.ux-feature-copy p{color:#697786;margin:0 0 22px}
+.ux-primary,.ux-row-action{
+  border:0;
+  border-radius:11px;
+  background:var(--ux-blue-strong);
+  color:white;
+  font-weight:800;
+  padding:11px 16px;
+}
+.ux-feature-art{position:relative}
+.ux-feature-art span{
+  position:absolute;right:8%;top:16%;
+  width:120px;height:150px;
+  border-radius:18px;
+  background:linear-gradient(160deg,#7f9cff,#5f7ce3);
+  transform:rotate(8deg);
+  box-shadow:0 20px 35px rgba(79,111,216,.22);
+}
+.ux-feature-art i{
+  position:absolute;right:34%;bottom:8%;
+  width:96px;height:120px;
+  border-radius:16px;
+  background:linear-gradient(160deg,#f2ae76,#e59255);
+  transform:rotate(-8deg);
+  box-shadow:0 16px 30px rgba(222,139,76,.18);
+}
+.ux-feature-art b{
+  position:absolute;right:35%;top:31%;
+  width:64px;height:64px;border-radius:50%;
+  background:#fff;color:#607de0;
+  display:grid;place-items:center;
+  font-size:1.7rem;
+  box-shadow:0 10px 25px rgba(37,55,78,.10);
+}
+.ux-kpi-card{
+  min-height:240px;
+  padding:22px;
+  position:relative;
+  overflow:hidden;
+}
+.ux-kpi-card>span{font-size:.76rem;font-weight:800;color:#778490}
+.ux-kpi-card>strong{
+  display:block;
+  margin:22px 0 4px;
+  font:800 2.65rem/1 Inter,ui-sans-serif,sans-serif;
+  letter-spacing:-.055em;
+}
+.ux-kpi-card>small{color:#8a95a0}
+.ux-mini-bar{
+  position:absolute;left:22px;right:22px;bottom:22px;
+  height:7px;border-radius:99px;background:#edf1f5;overflow:hidden;
+}
+.ux-mini-bar i{display:block;height:100%;background:#758ff0;border-radius:99px}
+.ux-mini-bar.alt i{background:#9b87eb}
+.ux-ring{
+  position:absolute;right:18px;bottom:16px;
+  width:78px;height:78px;border-radius:50%;
+  background:conic-gradient(#6f8ff7 calc(var(--p)*1%),#edf1f5 0);
+  display:grid;place-items:center;
+}
+.ux-ring:after{
+  content:"";position:absolute;inset:8px;border-radius:50%;background:#fff;
+}
+.ux-ring b{position:relative;z-index:1;font-size:.78rem;color:#5e6c78}
+
+.ux-dashboard-columns{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(310px,.75fr);
+  gap:14px;
+  align-items:start;
+}
+.ux-main-column,.ux-side-column{display:grid;gap:14px}
+.ux-panel{padding:22px}
+.ux-panel-head{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:center;
+  margin-bottom:16px;
+}
+.ux-panel-head h2{
+  margin:5px 0 0;
+  font:800 1.2rem/1.2 Inter,ui-sans-serif,sans-serif;
+  letter-spacing:-.025em;
+}
+.ux-link{
+  border:0;background:transparent;color:#5b73cf;font-weight:800;
+}
+.ux-exam-list{display:grid;gap:8px}
+.ux-exam-row{
+  display:grid;
+  grid-template-columns:44px 1fr auto;
+  align-items:center;
+  gap:14px;
+  padding:14px 0;
+  border-top:1px solid #edf1f4;
+}
+.ux-exam-row:first-child{border-top:0}
+.ux-exam-index{
+  width:38px;height:38px;border-radius:10px;
+  display:grid;place-items:center;
+  background:#f3f6f8;color:#789;
+  font-size:.74rem;font-weight:900;
+}
+.ux-exam-info span{
+  display:block;font-size:.65rem;font-weight:900;letter-spacing:.11em;color:#7a88a0;
+}
+.ux-exam-info b{display:block;margin:4px 0 3px;font-size:.94rem}
+.ux-exam-info small{color:#8a96a0}
+.ux-row-action{padding:9px 13px;background:#edf2ff;color:#4c66c2}
+.ux-progress-list{display:grid;gap:14px}
+.ux-progress-row{
+  display:grid;
+  grid-template-columns:minmax(150px,.65fr) 1fr 48px;
+  gap:14px;
+  align-items:center;
+}
+.ux-progress-row b,.ux-progress-row small{display:block}
+.ux-progress-row small{color:#919ba4;margin-top:3px}
+.ux-progress-track{height:8px;background:#edf1f5;border-radius:999px;overflow:hidden}
+.ux-progress-track i{
+  display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#708cf0,#8ea3f5);
+}
+.ux-progress-row strong{font-size:.84rem;text-align:right;color:#536273}
+.ux-week-strip{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
+}
+.ux-week-strip span{
+  text-align:center;padding:9px 3px;border-radius:10px;background:#f7f9fb;color:#7a8792;
+}
+.ux-week-strip b,.ux-week-strip small{display:block}
+.ux-week-strip b{font-size:.7rem}.ux-week-strip small{margin-top:5px;font-size:.72rem}
+.ux-week-strip span.today{background:#edf2ff;color:#4f67c0}
+.ux-planner-note{
+  display:flex;gap:10px;align-items:flex-start;
+  margin-top:16px;padding:13px;border-radius:12px;background:#f8fafb;
+}
+.ux-planner-note i{width:8px;height:8px;border-radius:50%;background:#6f8ff7;margin-top:5px}
+.ux-planner-note b,.ux-planner-note small{display:block}
+.ux-planner-note small{color:#87939e;margin-top:3px}
+.ux-result-list{display:grid;gap:8px}
+.ux-result-row{
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+  padding:11px 0;border-top:1px solid #edf1f4;
+}
+.ux-result-row:first-child{border-top:0}
+.ux-result-row b,.ux-result-row small{display:block}
+.ux-result-row small{color:#939da6;margin-top:3px}
+.ux-result-row strong{color:#536dcc}
+.ux-notice-card{background:linear-gradient(180deg,#fff,#fbfcfe)}
+.ux-notice{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 0;border-top:1px solid #edf1f4;
+}
+.ux-notice:first-of-type{border-top:0}
+.ux-notice>span{
+  width:28px;height:28px;border-radius:9px;background:#edf2ff;color:#5570cf;
+  display:grid;place-items:center;font-weight:900;font-size:.75rem;
+}
+.ux-notice b{font-size:.88rem}
+.ux-notice p{margin:4px 0 0;color:#89959f;font-size:.78rem;line-height:1.45}
+.ux-empty{padding:20px 0;color:#8e99a3;font-size:.88rem}
+
+@media(max-width:1200px){
+  .ux-overview-grid{grid-template-columns:1.5fr repeat(3,1fr)}
+  .ux-feature-card{grid-column:1/-1}
+}
+@media(max-width:980px){
+  .student-shell .neo-app{grid-template-columns:78px minmax(0,1fr)}
+  .ux-dashboard-columns{grid-template-columns:1fr}
+  .ux-overview-grid{grid-template-columns:repeat(3,1fr)}
+  .ux-feature-card{grid-column:1/-1}
+}
+@media(max-width:720px){
+  .ux-student-head{align-items:flex-start;flex-direction:column}
+  .ux-student-profile-card{display:none}
+  .ux-overview-grid{grid-template-columns:1fr}
+  .ux-feature-card{grid-template-columns:1fr;min-height:300px}
+  .ux-feature-art{display:none}
+  .ux-kpi-card{min-height:150px}
+  .ux-progress-row{grid-template-columns:1fr}
+  .ux-progress-row strong{text-align:left}
+  .ux-exam-row{grid-template-columns:38px 1fr}
+  .ux-row-action{grid-column:2;justify-self:start}
+}
