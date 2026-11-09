@@ -14,74 +14,101 @@ async function publicApi(path,opt={}){
 async function init(){if(location.hash.includes('type=recovery')){location.replace('/app/reset.html'+location.hash);return}if(location.hash.includes('type=signup')||location.hash.includes('type=email')){sessionStorage.setItem('rb_email_verified','1');history.replaceState(null,'',location.pathname+location.search)}try{const cfg=await api('/config');state.config=cfg||{classes:[]};state.setupRequired=!!cfg.setup_required;if(cfg.setup_required){location.replace('/app/setup.html');return}const d=await api('/me');state.me=d.user;state.csrf=d.csrf;render()}catch{login()}}
 function login(){
   R.innerHTML=`
-  <div class="neo-landing">
-    <header class="neo-header">
-      <button class="neo-brand" type="button" aria-label="Redbridge Exam Platform home">
+  <div class="ux-public">
+    <header class="ux-public-header">
+      <button class="ux-public-brand" type="button" aria-label="Redbridge Exam Platform home">
         <img src="/app/redbridge-logo.svg" alt="Redbridge International School">
         <span>Exam Platform</span>
       </button>
-      <nav class="neo-public-nav">
-        <button id="browse-public" class="neo-link">Exams</button>
-        <button id="term-public" class="neo-link">Term Exams</button>
-        <button id="signin-open" class="neo-btn ghost">Sign in</button>
-        <button id="register-open" class="neo-btn">Create account</button>
+      <nav class="ux-public-nav">
+        <button id="browse-public" class="ux-public-link">Exams</button>
+        <button id="term-public" class="ux-public-link">Term Exams</button>
+        <button id="signin-open" class="ux-public-secondary">Sign in</button>
+        <button id="register-open" class="ux-public-primary">Create account</button>
       </nav>
     </header>
 
-    <main class="neo-hero-wrap">
-      <section class="neo-hero">
-        <div class="neo-eyebrow"><span></span> Secure assessment, reimagined</div>
-        <h1>One platform.<br><em>Every exam.</em></h1>
-        <p>Take IELTS practice, Olympiads, placement tests, term exams and subject assessments in one focused, proctored environment.</p>
-        <div class="neo-hero-actions">
-          <button id="hero-register" class="neo-btn big">Start taking exams</button>
-          <button id="hero-term" class="neo-btn ghost big">Take a Term Exam</button>
+    <main>
+      <section class="ux-public-hero">
+        <div class="ux-public-copy">
+          <span class="ux-public-kicker">REDBRIDGE EXAM PLATFORM</span>
+          <h1>Focused exams.<br><em>Clear progress.</em></h1>
+          <p>One secure academic workspace for IELTS practice, Olympiads, placement tests, term exams and subject assessments.</p>
+          <div class="ux-public-actions">
+            <button id="hero-register" class="ux-public-primary large">Start taking exams</button>
+            <button id="hero-term" class="ux-public-secondary large">Take a Term Exam</button>
+          </div>
+          <div class="ux-public-trust">
+            <span>Timed attempts</span><span>Autosave + resume</span><span>Secure proctoring</span><span>Results</span><span>Certificates</span>
+          </div>
         </div>
-        <div class="neo-trust-row">
-          <span>Timed attempts</span><span>Autosave</span><span>Camera + mic checks</span><span>Instant results</span><span>Certificates</span>
+
+        <div class="ux-public-product">
+          <div class="ux-public-window">
+            <div class="ux-public-window-top">
+              <div><i></i><i></i><i></i></div><span>Student dashboard</span><b>Secure</b>
+            </div>
+            <div class="ux-public-window-body">
+              <aside>
+                <span class="active">⌂</span><span>◷</span><span>★</span><span>◉</span><span>◇</span>
+              </aside>
+              <div class="ux-public-dashboard">
+                <div class="ux-public-welcome"><small>GOOD MORNING</small><h3>Ready for your next exam?</h3><p>Your assessments and results in one place.</p></div>
+                <div class="ux-public-dashboard-grid">
+                  <article class="ux-demo-next"><small>NEXT TO DO</small><b>English Assessment</b><span>45 min · Foundation</span><button>Start exam</button></article>
+                  <article class="ux-demo-stat"><span>Available</span><b>12</b><i></i></article>
+                  <article class="ux-demo-stat"><span>Best score</span><b>94%</b><i class="violet"></i></article>
+                </div>
+                <div class="ux-demo-list">
+                  <div><span>01</span><b>Math Olympiad</b><small>60 min</small></div>
+                  <div><span>02</span><b>IELTS Practice</b><small>Listening</small></div>
+                  <div><span>03</span><b>Science Assessment</b><small>45 min</small></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ux-public-float one"><span>Autosave</span><b>Active</b></div>
+          <div class="ux-public-float two"><span>Latest result</span><b>94%</b></div>
         </div>
       </section>
 
-      <section class="neo-showcase">
-        <div class="neo-orbit orbit-a"></div><div class="neo-orbit orbit-b"></div>
-        <article class="neo-feature-card main-card">
-          <div class="neo-card-top"><span class="neo-chip red">LIVE</span><span class="neo-muted">Proctored exam</span></div>
-          <h3>English Olympiad</h3><p>Senior Group · 60 min</p>
-          <div class="neo-progress"><i style="width:74%"></i></div>
-          <div class="neo-card-footer"><span>40 questions</span><b>Start →</b></div>
-        </article>
-        <article class="neo-mini-card mini-one"><span class="neo-icon">◎</span><div><b>IELTS</b><small>Practice tests</small></div></article>
-        <article class="neo-mini-card mini-two"><span class="neo-icon">∑</span><div><b>Math Olympiad</b><small>Junior · Senior</small></div></article>
-        <article class="neo-score-card"><small>Latest score</small><strong>86%</strong><span>Certificate ready</span></article>
+      <section class="ux-public-categories" id="public-exam-section">
+        <div class="ux-public-section-head"><div><span class="ux-public-kicker">EXAM LIBRARY</span><h2>Choose what you’re preparing for.</h2></div><p>Clear categories, clear levels, and no clutter.</p></div>
+        <div class="ux-public-category-grid">
+          ${[
+            ['IELTS','Academic & General','◌','blue'],
+            ['English Olympiad','Junior & Senior','A','lilac'],
+            ['Math Olympiad','Junior & Senior','∑','orange'],
+            ['Placement Tests','A1 to C2','↗','blue'],
+            ['Subject Exams','English · Math · Science','□','lilac'],
+            ['Term Exams','No account required','●','orange']
+          ].map(x=>'<button class="ux-public-category public-category '+x[3]+'" data-cat="'+h(x[0])+'"><span>'+x[2]+'</span><div><b>'+h(x[0])+'</b><small>'+h(x[1])+'</small></div><i>↗</i></button>').join('')}
+        </div>
+      </section>
+
+      <section class="ux-public-experience">
+        <div class="ux-public-section-head"><div><span class="ux-public-kicker">ONE DESIGN SYSTEM</span><h2>Three experiences, one platform.</h2></div><p>Students, administrators and candidates each get the interface they need.</p></div>
+        <div class="ux-public-experience-grid">
+          <article><span class="ux-exp-icon blue">01</span><h3>Student dashboard</h3><p>Upcoming exams, recent results, subject progress and announcements.</p><div class="ux-exp-preview student"><i></i><i></i><i></i></div></article>
+          <article><span class="ux-exp-icon lilac">02</span><h3>Secure exam mode</h3><p>Readable questions, time remaining, question navigation and proctoring.</p><div class="ux-exp-preview exam"><i></i><i></i><i></i></div></article>
+          <article><span class="ux-exp-icon orange">03</span><h3>Academic operations</h3><p>Exam planning, question banks, submissions and publishing workflows.</p><div class="ux-exp-preview admin"><i></i><i></i><i></i></div></article>
+        </div>
+      </section>
+
+      <section class="ux-public-secure">
+        <div><span class="ux-public-kicker">SECURE MODE</span><h2>Designed for serious assessment.</h2><p>Integrity controls stay visible without getting in the student’s way.</p></div>
+        <div class="ux-public-secure-grid">
+          <span><b>01</b> Camera permission</span>
+          <span><b>02</b> Microphone permission</span>
+          <span><b>03</b> Fullscreen monitoring</span>
+          <span><b>04</b> Tab-switch warnings</span>
+          <span><b>05</b> Autosave + resume</span>
+          <span><b>06</b> Verified certificates</span>
+        </div>
       </section>
     </main>
 
-    <section class="neo-category-strip" id="public-exam-section">
-      <div class="neo-section-head"><div><span class="neo-kicker">EXAM LIBRARY</span><h2>Choose your challenge</h2></div><p>Focused categories. Clear levels. No classroom clutter.</p></div>
-      <div class="neo-category-grid">
-        ${[
-          ['IELTS','Academic & General','◌'],
-          ['English Olympiad','Junior & Senior','A'],
-          ['Math Olympiad','Junior & Senior','∑'],
-          ['Placement Tests','A1 to C2','↗'],
-          ['Subject Exams','English · Math · Science','□'],
-          ['Term Exams','No account required','●']
-        ].map(x=>'<button class="neo-category-card public-category" data-cat="'+h(x[0])+'"><span class="neo-category-icon">'+x[2]+'</span><b>'+h(x[0])+'</b><small>'+h(x[1])+'</small><i>Explore →</i></button>').join('')}
-      </div>
-    </section>
-
-    <section class="neo-proctor-band">
-      <div><span class="neo-kicker light">SECURE MODE</span><h2>Built for serious exams.</h2></div>
-      <div class="neo-proctor-points">
-        <span><b>01</b> Camera permission</span>
-        <span><b>02</b> Microphone permission</span>
-        <span><b>03</b> Fullscreen monitoring</span>
-        <span><b>04</b> Tab-switch warnings</span>
-        <span><b>05</b> Autosave + resume</span>
-      </div>
-    </section>
-
-    <footer class="neo-footer">Redbridge International School · Exam Platform</footer>
+    <footer class="ux-public-footer"><span>Redbridge International School · Exam Platform</span><button id="footer-signin">Sign in →</button></footer>
   </div>`;
 
   const openSignIn=()=>modal(`
@@ -102,8 +129,8 @@ function login(){
     });
 
   const openRegister=()=>{location.href='/app/register.html'};
-
   document.getElementById('signin-open').onclick=openSignIn;
+  document.getElementById('footer-signin').onclick=openSignIn;
   document.getElementById('register-open').onclick=openRegister;
   document.getElementById('hero-register').onclick=openRegister;
   document.getElementById('hero-term').onclick=()=>openTermExamChooser();
