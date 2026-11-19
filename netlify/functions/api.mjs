@@ -4,6 +4,7 @@ export default async function(req) {
   try {
     const u = new URL(req.url);
     let p = u.pathname.replace("/.netlify/functions/api", "");
+    p = p.replace(/^\/api(?=\/|$)/, "");
     if (!p.startsWith("/")) p = "/" + p;
 
     const headers = new Headers();
