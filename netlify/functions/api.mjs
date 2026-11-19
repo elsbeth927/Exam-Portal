@@ -8,9 +8,11 @@ export default async function(req) {
 
     const headers = new Headers();
     const cookie = req.headers.get("cookie");
+    const auth = req.headers.get("authorization");
     const csrf = req.headers.get("x-csrf-token");
     const ct = req.headers.get("content-type");
     if (cookie) headers.set("cookie", cookie);
+    if (auth) headers.set("authorization", auth);
     if (csrf) headers.set("x-csrf-token", csrf);
     if (ct) headers.set("content-type", ct);
 
