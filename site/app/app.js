@@ -255,6 +255,8 @@ async function loadView(){const P=document.getElementById('page');P.innerHTML='<
     const released=rs.filter(x=>x.results_published);
     const best=released.length?Math.max(...released.map(x=>Number(x.percentage||0))):0;
     const first=(state.me.first_name||'Candidate');
+    const localHour=new Date().getHours();
+    const greeting=localHour<12?'Good morning':localHour<18?'Good afternoon':'Good evening';
     const inProgress=es.filter(x=>x.attempt_status==='IN_PROGRESS');
     const available=es.filter(x=>x.attempt_status!=='COMPLETED');
     const recentResults=released.slice().sort((a,b)=>new Date(b.submitted_at||b.updated_at||0)-new Date(a.submitted_at||a.updated_at||0)).slice(0,4);
@@ -270,7 +272,7 @@ async function loadView(){const P=document.getElementById('page');P.innerHTML='<
 
     P.innerHTML=
       '<section class="ux-student-head">'+
-        '<div><span class="ux-overline">STUDENT DASHBOARD</span><h1>Good morning, '+h(first)+'.</h1><p>Everything you need for your next assessment, progress and results.</p></div>'+
+        '<div><span class="ux-overline">STUDENT DASHBOARD</span><h1>'+greeting+', '+h(first)+'.</h1><p>Everything you need for your next assessment, progress and results.</p></div>'+
         '<div class="ux-student-profile-card"><div class="ux-avatar">'+h((state.me.first_name||'R').slice(0,1)+(state.me.last_name||'').slice(0,1))+'</div><div><b>'+h(state.me.first_name+' '+state.me.last_name)+'</b><small>'+h(state.me.email||'Candidate')+'</small></div></div>'+
       '</section>'+
 
