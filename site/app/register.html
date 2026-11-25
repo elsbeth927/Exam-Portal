@@ -90,7 +90,14 @@ document.getElementById('register-form').onsubmit=async e=>{
     form.reset();
     setTimeout(()=>location.href='/app/',1800);
   }catch(x){
-    err.textContent=x.message;
+    const msg=String(x.message||'');
+    if(/email rate limit exceeded|over_email_send_rate_limit/i.test(msg)){
+      err.textContent='Verification email limit reached. Please try again later or contact Redbridge support. Your account was not created.';
+    }else if(/email address not authorized/i.test(msg)){
+      err.textContent='This email cannot receive verification messages yet. Please contact Redbridge support.';
+    }else{
+      err.textContent=msg||'Could not create account.';
+    }
   }finally{
     btn.disabled=false; btn.textContent='Create account';
   }
